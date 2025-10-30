@@ -1,3 +1,24 @@
-.topbar{display:flex;align-items:center;gap:2rem;padding:1rem;border-bottom:1px solid #e5e7eb}
-    nav a{margin-right:1rem;text-decoration:none}
-    main{max-width:960px;margin:0 auto;padding:1rem}
+.topbar {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    background-color: rgb(235, 202, 238);
+    
+}
+.title {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 1.5em;
+    color: blue;
+    text-decoration: solid;
+}
+nav a { 
+    margin-right: 1rem;
+    text-decoration: none;
+}
+main {
+     max-width:960px;
+     margin:0 auto;
+     padding:1rem;
+}
