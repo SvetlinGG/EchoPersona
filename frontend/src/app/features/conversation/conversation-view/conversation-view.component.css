@@ -1,0 +1,6 @@
+.chat{display:flex;flex-direction:column;gap:.75rem;margin-bottom:1rem}
+    .bubble{padding:.75rem 1rem;border-radius:12px;background:#f3f4f6}
+    .assistant .bubble{background:#eef6ff}
+    .user{align-self:flex-end}
+    .meta{display:block;font-size:.75rem;color:#6b7280;margin-bottom:.25rem}
+    .controls{position:sticky;bottom:0;padding:.5rem;border-top:1px solid #e5e7eb;background:#fff}

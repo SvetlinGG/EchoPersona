@@ -1,0 +1,11 @@
+.vc{
+    display: flex;
+    align-items: center;
+    gap: 1rem
+}
+.status{
+    color:#9ca3af
+}
+.status .on{
+    color:#10b981
+}

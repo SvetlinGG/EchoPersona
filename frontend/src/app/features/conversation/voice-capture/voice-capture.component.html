@@ -1,1 +1,6 @@
-<p>voice-capture works!</p>
+<div class="vc">
+    <button (click)="toggle()">
+      {{ recording() ? 'Stop' : 'Speak' }}
+    </button>
+    <span class="status" [class.on]="connected()">●</span>
+  </div>

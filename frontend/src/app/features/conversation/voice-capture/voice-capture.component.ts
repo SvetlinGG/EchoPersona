@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed, signal } from '@angular/core';
 import { AudioService } from '../../../core/services/audio.service';
 import { WsService } from '../../../core/services/ws.service';
 

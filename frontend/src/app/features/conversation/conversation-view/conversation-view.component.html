@@ -1,0 +1,14 @@
+<section class="chat">
+    <div *ngFor="let m of messages()"
+         [class.user]="m.role==='user'"
+         [class.assistant]="m.role==='assistant'">
+      <div class="bubble">
+        <span class="meta">{{m.role}} · {{m.timestamp | date:'shortTime'}}</span>
+        <div class="text">{{m.text}}</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="controls">
+    <app-voice-capture></app-voice-capture>
+  </footer>
