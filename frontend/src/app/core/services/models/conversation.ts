@@ -1,3 +1,7 @@
+export interface EmotionVector {
+    [emotion: string]: number;
+}
+
 export interface ChatMessage {
     id: string;
     role: 'user' | 'assistant' | 'system';

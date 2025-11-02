@@ -42,7 +42,7 @@ export class ConversationViewComponent {
       last.text = text;
       this.messages.set([...items])
     } else {
-      const next = ChatMessage = { id: crypto.randomUUID(), role, text, timestamp: Date.now(), partial: true};
+      const next: ChatMessage = { id: crypto.randomUUID(), role, text, timestamp: Date.now(), partial: true};
       this.messages.set([...items, next]);
     }
   }
