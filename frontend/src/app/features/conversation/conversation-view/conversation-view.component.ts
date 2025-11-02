@@ -14,7 +14,7 @@ import { ChatMessage } from '../../../core/services/models/conversation';
 export class ConversationViewComponent {
 
   private ws = inject(WsService);
-  message = signal<ChatMessage[]>([]);
+  messages = signal<ChatMessage[]>([]);
 
   constructor(){
     this.ws.connect('ws://localhost:3001/ws', (msg) => this.handle(msg));
@@ -36,8 +36,19 @@ export class ConversationViewComponent {
   }
 
   private upsertPartial(role: 'user' | 'assistant', text: string){
-    const items = 
-
+    const items = this.messages();
+    const last = items[items.length - 1];
+    if ( last && last.role === role && last.partial){
+      last.text = text;
+      this.messages.set([...items])
+    } else {
+      const next = ChatMessage = { id: crypto.randomUUID(), role, text, timestamp: Date.now(), partial: true};
+      this.messages.set([...items, next]);
+    }
   }
 
+  private confirmPartial( role: 'user' | 'assistant', text: string) {
+    const items = this.messages().map( m => (m.role === role && m.partial) ? ({...m, text, partial: false}) : m);
+    this.messages.set(items);
+  }
 }
