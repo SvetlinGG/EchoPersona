@@ -2,6 +2,8 @@ import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, Routes, withComponentInputBinding } from '@angular/router';
 //import { routes } from './app.routes';
 import { ConversationViewComponent } from './features/conversation/conversation-view/conversation-view.component';
+import { PersonaStudioComponent } from './features/persona/persona-studio/persona-studio.component';
+import { SettingsComponent } from './features/settings/settings/settings.component';
 
 const routes: Routes = [
   { path: '', component: ConversationViewComponent },
