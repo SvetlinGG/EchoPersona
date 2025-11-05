@@ -1,1 +1,12 @@
-<p>settings works!</p>
+<h2>Настройки</h2>
+<label>Voice ID 
+  <input [value]="voice().voiceId" (input)="updateVoiceId($event)">
+</label>
+<label>Rate 
+  <input type="range" min="0.5" max="2" step="0.1"
+         [value]="voice().rate" (input)="updateRate($event)">
+</label>
+<label>Pitch 
+  <input type="range" min="-12" max="12" step="1"
+         [value]="voice().pitch" (input)="updatePitch($event)">
+</label>
