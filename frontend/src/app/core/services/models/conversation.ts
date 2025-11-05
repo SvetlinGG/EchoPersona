@@ -1,20 +1,28 @@
+export type MessageRole = 'user' | 'assistant' | 'system';
+
+export interface EmotionVector {
+  readonly [emotion: string]: number;
+}
 
 export interface ChatMessage {
-    id: string;
-    role: 'user' | 'assistant' | 'system';
-    text: string;
-    timestamp: number;
-    emotions?: EmotionVector;
-    audioUrl?: string;
-    partial?: boolean; 
+  readonly id: string;
+  readonly role: MessageRole;
+  readonly text: string;
+  readonly timestamp: number;
+  readonly emotions?: EmotionVector;
+  readonly audioUrl?: string;
+  readonly partial?: boolean;
 }
 
-export interface WsOutgoing {
-    type: 'audioChunk' | 'command' | 'settings';
-    payload: any;
+export type WsOutgoingType = 'audioChunk' | 'command' | 'settings';
+export type WsIncomingType = 'partialTranscription' | 'finalTranscription' | 'assistantText' | 'emotion' | 'ttsChunk' | 'done';
+
+export interface WsOutgoing<T = unknown> {
+  readonly type: WsOutgoingType;
+  readonly payload: T;
 }
 
-export interface WsIncoming {
-    type: 'partialTranscription' | 'finalTranscription' | 'assistantText' | 'emotion' | 'ttsChunk' | 'done';
-    payload: any;
+export interface WsIncoming<T = unknown> {
+  readonly type: WsIncomingType;
+  readonly payload: T;
 }

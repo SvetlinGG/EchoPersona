@@ -8,7 +8,7 @@ import { SettingsComponent } from './features/settings/settings/settings.compone
 const routes: Routes = [
   { path: '', component: ConversationViewComponent },
   { path: 'settings', component: SettingsComponent },
-  { path: 'persona', component: PersonaStudioComponent}
+  { path: 'persona', component: PersonaStudioComponent},
   { path: '**', redirectTo: ''}
 ]
 

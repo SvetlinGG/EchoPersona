@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, effect, inject, signal } from '@angular/core';
 import { VoiceCaptureComponent } from '../voice-capture/voice-capture.component';
 import { WsService } from '../../../core/services/ws.service';
-import { ChatMessage } from '../../../core/services/models/conversation';
+import { ChatMessage, MessageRole } from '../../../core/services/models/conversation';
 
 @Component({
   selector: 'app-conversation-view',
@@ -35,20 +35,22 @@ export class ConversationViewComponent {
     }
   }
 
-  private upsertPartial(role: 'user' | 'assistant', text: string){
+  private upsertPartial(role: MessageRole, text: string){
     const items = this.messages();
     const last = items[items.length - 1];
-    if ( last && last.role === role && last.partial){
-      last.text = text;
-      this.messages.set([...items])
+    if (last && last.role === role && last.partial) {
+      const updated = [...items.slice(0, -1), { ...last, text }];
+      this.messages.set(updated);
     } else {
-      const next: ChatMessage = { id: crypto.randomUUID(), role, text, timestamp: Date.now(), partial: true};
+      const next: ChatMessage = { id: crypto.randomUUID(), role, text, timestamp: Date.now(), partial: true };
       this.messages.set([...items, next]);
     }
   }
 
-  private confirmPartial( role: 'user' | 'assistant', text: string) {
-    const items = this.messages().map( m => (m.role === role && m.partial) ? ({...m, text, partial: false}) : m);
+  private confirmPartial(role: MessageRole, text: string) {
+    const items = this.messages().map(m => 
+      (m.role === role && m.partial) ? { ...m, text, partial: false } : m
+    );
     this.messages.set(items);
   }
 }
