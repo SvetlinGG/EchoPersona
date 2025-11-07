@@ -1,58 +1,93 @@
-import { generateToneWavDataUrl } from './utils/wavTone.js';
+// src/ws.js
+import { transcribeWebmOpusBufferToText } from './stt-whisper.js';
+import { elevenLabsTtsStream } from './tts-eleven.js';
 
-export function handleWsConnection(ws){
-    send(ws, { type: 'hello', payload: {server: 'EchoPersona WS'} });
+export function handleWsConnection(ws) {
+  send(ws, { type: 'hello', payload: { server: 'EchoPersona WS (real STT/TTS)' } });
 
-    let collecting = false;
-    let audioBytes = 0;
+  let collecting = false;
+  let audioBuffers = []; // we collect the incoming binary chunks
 
-    ws.on('message', (data, isBinary) => {
-        if ( isBinary ){
-            audioBytes += data.byteLength;
-            return;
+  ws.on('message', async (data, isBinary) => {
+    if (isBinary) {
+      if (collecting) audioBuffers.push(Buffer.from(data));
+      return;
+    }
+
+    let msg;
+    try { msg = JSON.parse(data.toString()); } catch { return; }
+
+    if (msg.type === 'beginUtterance') {
+      collecting = true;
+      audioBuffers = [];
+      // optional: send partialTranscription "" for UX
+    }
+
+    if (msg.type === 'endUtterance') {
+      collecting = false;
+      const full = Buffer.concat(audioBuffers);
+
+      // (1) STT (Whisper)
+      let userText = '';
+      try {
+        // optional: before the finale you can send fake partials for a "live" effect
+        userText = await transcribeWebmOpusBufferToText(full);
+      } catch (e) {
+        console.error(e);
+        send(ws, { type: 'finalTranscription', text: '[Failed transcription]' });
+        return;
+      }
+      send(ws, { type: 'finalTranscription', text: userText });
+
+      // (2) Emotion
+      const emo = fakeEmotionFromText(userText);
+      send(ws, { type: 'emotion', payload: emo });
+
+      // (3) Assistant text 
+      const reply = craftAssistantReply(userText, emo);
+      send(ws, { type: 'assistantText', text: reply, final: true });
+
+      // (4) ElevenLabs TTS → stream 
+      send(ws, { type: 'ttsHeader', payload: { mode: 'chunks', mime: 'audio/mpeg' } });
+      try {
+        for await (const chunk of elevenLabsTtsStream({ text: reply })) {
+          sendBinary(ws, chunk);
         }
+      } catch (e) {
+        console.error('TTS stream error:', e);
+      }
+      send(ws, { type: 'done' });
+    }
 
-        let msg;
-        try { msg = JSON.parse(data.toString()); } catch (error) { return; }
+    if (msg.type === 'settings') {
+      send(ws, { type: 'assistantText', text: 'Settings received.', final: true });
+    }
+  });
 
-        if ( msg.type === 'beginUtterance') collecting = true;
-        if ( msg.type === 'endUtterance' ) {
-            collecting = false;
-            simulateResponse(ws);
-        }
-        if ( msg.type === 'settings') {
-            send(ws, { type: 'assistantText', text: 'Settings received.', final: true});
-        }
-    });
-
-    ws.on('close', () => console.log('WS: the client disconnected'))
+  ws.on('close', () => {});
 }
 
-function send(ws, obj){
-    if ( ws.readyState === ws.OPEN ) ws.send(JSON.stringify(obj));
+function send(ws, obj) {
+  if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(obj));
+}
+function sendBinary(ws, buf) {
+  if (ws.readyState === ws.OPEN) ws.send(buf, { binary: true });
 }
 
-//Simulate STT emotion -> LLM -> TTS (mock pipeline)
 
-function simulateResponse(ws){
-
-    // 1) Partial /final transcription
-
-    setTimeout(() => send(ws, { type: 'partialTranscription', text: 'I think today...' }), 200);
-    setTimeout(() => send(ws, { type: 'finalTranscription', text: 'I think I need motivation today..' }), 600);
-
-    // 2) Emotion
-    setTimeout(() => send(ws, { type: 'emotion', payload: { valence: -0.1, arousal: 0.6, label: 'stressed' } }), 800);
-
-    // 3) Assistant partial / final
-    setTimeout(() => send(ws, { type: 'assistantText', text: "I understand you. Let's start with a small step...", final: false }), 1100);
-    setTimeout(() => send(ws, { type: 'assistantText', text: "I understand you. Let's start with a small step: Choose a 5-minute task and start a timer. Are you ready?", final: true}), 1600);
-
-    // 4) TTS ( data  URL mock)
-    const url = generateToneWavDataUrl(0.7, 440);
-    setTimeout(() => {
-        send(ws, { type: 'ttsHeader', payload: { mode: 'url' } });
-        send(ws, { type: 'ttsUrl', payload: { url } });
-        send(ws, { type: 'done' });
-    }, 2000);
+function fakeEmotionFromText(text) {
+  const t = (text || '').toLowerCase();
+  if (t.includes('fatigue') || t.includes('difficult')) return { valence: -0.2, arousal: 0.5, label: 'stressed' };
+  if (t.includes('joy') || t.includes('cool')) return { valence: 0.6, arousal: 0.6, label: 'happy' };
+  return { valence: 0.0, arousal: 0.4, label: 'neutral' };
 }
+
+
+function craftAssistantReply(userText, emo) {
+  
+  if (emo.label === 'stressed') {
+    return "I understand. Let's take a small first step: choose a simple 5-minute task and start a timer. Are you ready?";
+  }
+  return 'Great! I suggest two quick steps: 1) set a mini-goal for the next 5 minutes, 2) start a timer. Let me know how it goes.';
+}
+
