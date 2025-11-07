@@ -31,3 +31,28 @@ export function handleWsConnection(ws){
 function send(ws, obj){
     if ( ws.readyState === ws.OPEN ) ws.send(JSON.stringify(obj));
 }
+
+//Simulate STT emotion -> LLM -> TTS (mock pipeline)
+
+function simulateResponse(ws){
+
+    // 1) Partial /final transcription
+
+    setTimeout(() => send(ws, { type: 'partialTranscription', text: 'I think today...' }), 200);
+    setTimeout(() => send(ws, { type: 'finalTranscription', text: 'I think I need motivation today..' }), 600);
+
+    // 2) Emotion
+    setTimeout(() => send(ws, { type: 'emotion', payload: { valence: -0.1, arousal: 0.6, label: 'stressed' } }), 800);
+
+    // 3) Assistant partial / final
+    setTimeout(() => send(ws, { type: 'assistantText', text: "I understand you. Let's start with a small step...", final: false }), 1100);
+    setTimeout(() => send(ws, { type: 'assistantText', text: "I understand you. Let's start with a small step: Choose a 5-minute task and start a timer. Are you ready?", final: true}), 1600);
+
+    // 4) TTS ( data  URL mock)
+    const url = generateToneWavDataUrl(0.7, 440);
+    setTimeout(() => {
+        send(ws, { type: 'ttsHeader', payload: { mode: 'url' } });
+        send(ws, { type: 'ttsUrl', payload: { url } });
+        send(ws, { type: 'done' });
+    }, 2000);
+}
