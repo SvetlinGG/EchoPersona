@@ -15,5 +15,14 @@ export async function* elevenLabsTtsStream({ text, voiceId = 'Rachel', modelId =
             voice_settings: { stability: 0.5, similarity_boost: 0.8, style: 0.0, use_speaker_boost: true}
         })
     });
-    
+
+    if ( !resp.ok || !resp.body){
+        const msg = await resp.text().catch(() => '');
+        throw new Error(`ElevenLabs TTS failed: ${resp.status} ${msg}`);
+    }
+
+    // resp.body is ReadableStream (web), node-fetch give as AsyncIterable<Uint8Array>
+    for await ( const chunk of resp.body){
+        yield chunk; // binar parts (audio/mpeg)
+    }
 }
