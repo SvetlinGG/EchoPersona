@@ -18,8 +18,22 @@ export class WsService {
     this.onBinary = onBin;
     this.ws = new WebSocket(url);
     this.ws.binaryType = 'arraybuffer';
+
+    this.ws.onopen = () => this.isConnected.set(true);
+    this.ws.onclose = () => this.isConnected.set(false);
+
     this.ws.onmessage = (ev) => {
-      try { onMsg(JSON.parse(ev.data));} catch (error) { onMsg(ev.data);}
+
+      if ( typeof ev.data !== 'string'){
+        this.onBinary?.(ev.data as ArrayBuffer);
+        return;
+      }
+      try { 
+        const obj = JSON.parse(ev.data as string);
+        this.onMessage?.(obj);
+      } catch (error) { 
+        (ev.data);
+      }
     };
   }
 

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal, computed, type OnInit } from '@angular/core';
 import { VoiceCaptureComponent } from '../voice-capture/voice-capture.component';
 import { WsService } from '../../../core/services/ws.service';
-import { ChatMessage, MessageRole } from '../../../core/services/models/conversation';
+import { TtsService } from '../../../core/services/tts.service';
 
 interface WsEvent {
   type: 'partialTranscription' | 'finalTranscription' | 'assistantText';
@@ -17,50 +17,51 @@ interface WsEvent {
   templateUrl: './conversation-view.component.html',
   styleUrl: './conversation-view.component.css'
 })
-export class ConversationViewComponent implements OnInit {
-  private readonly ws = inject(WsService);
-  
-  readonly messages = signal<ChatMessage[]>([]);
-  readonly isConnected = this.ws.isConnected;
-  readonly messageCount = computed(() => this.messages().length);
+export class ConversationViewComponent {
+  private ws = inject(WsService);
+  private tts = inject(TtsService);
+  messages = signal<{role:'user'|'assistant'; text:string}[]>([]);
+  private msrc: ReturnType<TtsService['createMediaSource']> | null = null;
 
-  ngOnInit(): void {
-    this.ws.connect('ws://localhost:3001/ws', (event: WsEvent) => {
-      const handlers = {
-        partialTranscription: () => this.upsert('user', event.text),
-        finalTranscription: () => this.confirm('user', event.text),
-        assistantText: () => {
-          this.upsert('assistant', event.text);
-          if (event.final) this.confirm('assistant', event.text);
+  constructor() {
+    
+    this.ws.connect('ws://localhost:3001/ws',
+      
+      (msg) => {
+        switch (msg.type) {
+          case 'partialTranscription':
+            this.upsert('user', msg.text, true); break;
+          case 'finalTranscription':
+            this.upsert('user', msg.text, false); break;
+          case 'assistantText':
+            this.upsert('assistant', msg.text, !msg.final); break;
+          case 'ttsHeader':
+            this.msrc = msg.payload?.mode === 'chunks'
+              ? this.tts.createMediaSource(msg.payload?.mime ?? 'audio/mpeg')
+              : null;
+            break;
+          case 'ttsUrl':
+            this.tts.playUrl(msg.payload.url);
+            break;
+          case 'done':
+            this.msrc?.play(); this.msrc?.end();
+            break;
         }
-      };
-      handlers[event.type]?.();
-    });
-  }
-
-
-
-  private upsert(role: MessageRole, text: string): void {
-    this.messages.update(msgs => {
-      const last = msgs.at(-1);
-      if (last?.role === role && last.partial) {
-        return [...msgs.slice(0, -1), { ...last, text }];
-      }
-      return [...msgs, { id: crypto.randomUUID(), role, text, timestamp: Date.now(), partial: true }];
-    });
-  }
-
-  private confirm(role: MessageRole, text: string): void {
-    this.messages.update(msgs =>
-      msgs.map(msg => 
-        msg.role === role && msg.partial ? { ...msg, text, partial: false } : msg
-      )
+      },
+      
+      (buf) => this.msrc?.append(buf)
     );
   }
 
-  simulate(){
-    // to voice-capture Component
-    this.ws.sendJson({ type: 'beginUtterance' });
-    setTimeout(() => this.ws.sendJson({ type: 'endUtterance' }), 2000);
+  private upsert(role:'user'|'assistant', text:string, partial:boolean){
+    const list = this.messages();
+    const last = list[list.length-1];
+    if (last && last.role===role && partial) {
+      last.text = text; this.messages.set([...list]);
+    } else if (partial) {
+      this.messages.set([...list, {role, text}]);
+    } else {
+      this.messages.set([...list, {role, text}]);
+    }
   }
 }
