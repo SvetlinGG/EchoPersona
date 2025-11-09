@@ -1,6 +1,1 @@
-<div class="vc">
-    <button (click)="toggle()">
-      {{ recording() ? 'Stop' : 'Speak' }}
-    </button>
-    <span class="status" [class.on]="connected()">●</span>
-  </div>
+<button (click)="toggle()">{{ audio.isRecording() ? 'STOP' : 'SPEAK' }}</button>

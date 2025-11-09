@@ -13,21 +13,17 @@ export class VoiceCaptureComponent {
   audio = inject(AudioService);
   ws = inject(WsService);
 
-  recording = this.audio.isRecording;
-  connected = this.ws.isConnected;
-
-  constructor(){
-    this.ws.connect('ws://localhost:3001/ws', () => {});
-  }
+  // recording = this.audio.isRecording;
+  // connected = this.ws.isConnected;
 
   async toggle(){
-    if (!this.recording()){
-      await this.audio.start(async (blob) => {
-
-        this.ws.sendBinary(blob);
-      });
+    if (!this.audio.isRecording()){
+      //START
       this.ws.sendJson({type: 'beginUtterance'});
+      await this.audio.start((blob) => this.ws.sendBinary(blob));
+      
     }else {
+      // STOP
       this.audio.stop();
       this.ws.sendJson({type: 'endUtterance'});
     }
