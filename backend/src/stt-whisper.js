@@ -18,7 +18,7 @@ export async function transcribeWebmOpusBufferToText(buf){
 
     // 2) convert to wav 16k mono
     await new Promise((resolve, reject) => {
-        ffmpegPath(inPath)
+        Ffmpeg(inPath)
             .audioChannels(1)
             .audioFrequency(16000)
             .format('wav')
