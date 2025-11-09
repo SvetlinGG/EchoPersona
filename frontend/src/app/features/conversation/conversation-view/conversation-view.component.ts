@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal, computed, type OnInit } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { VoiceCaptureComponent } from '../voice-capture/voice-capture.component';
 import { WsService } from '../../../core/services/ws.service';
 import { TtsService } from '../../../core/services/tts.service';
@@ -57,9 +57,8 @@ export class ConversationViewComponent {
     const list = this.messages();
     const last = list[list.length-1];
     if (last && last.role===role && partial) {
-      last.text = text; this.messages.set([...list]);
-    } else if (partial) {
-      this.messages.set([...list, {role, text}]);
+      const updated = [...list.slice(0, -1), {...last, text}];
+      this.messages.set(updated);
     } else {
       this.messages.set([...list, {role, text}]);
     }

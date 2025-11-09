@@ -10,8 +10,8 @@ import { WsService } from '../../../core/services/ws.service';
   styleUrl: './voice-capture.component.css'
 })
 export class VoiceCaptureComponent {
-  private audio = inject(AudioService);
-  private ws = inject(WsService);
+  audio = inject(AudioService);
+  ws = inject(WsService);
 
   recording = this.audio.isRecording;
   connected = this.ws.isConnected;

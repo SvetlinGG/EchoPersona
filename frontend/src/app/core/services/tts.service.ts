@@ -47,4 +47,8 @@ export class TtsService {
     return { audio, append, play, end };
   }
 
+  playUrl(url: string) {
+    const audio = new Audio(url);
+    audio.play().catch(() => {});
+  }
 }

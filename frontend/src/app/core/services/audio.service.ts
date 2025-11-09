@@ -5,12 +5,19 @@ export class AudioService {
   constructor() { }
   private stream?: MediaStream;
   private recorder?: MediaRecorder;
-  private chunkMs = 400;
   isRecording = signal(false);
+  private chunkMs = 400;
+  
 
   async start( onChunk: (blob: Blob) => void){
-    this.stream = await navigator.mediaDevices.getUserMedia({ audio: {echoCancellation: true, noiseSuppression: true}});
-    this.recorder = new MediaRecorder(this.stream, {mimeType: 'audio/webm;codecs=opus', audioBitsPerSecond: 48000 });
+    this.stream = await navigator.mediaDevices.getUserMedia({ 
+      audio: {echoCancellation: true, noiseSuppression: true}
+    });
+
+    const preferred = 'audio/webm;codecs=opus';
+    const mime = MediaRecorder.isTypeSupported(preferred) ? preferred : 'audio/webm';
+    this.recorder = new MediaRecorder(this.stream, {mimeType: mime});
+    
     this.recorder.ondataavailable = (e) => e.data.size && onChunk(e.data);
     this.recorder.start(this.chunkMs);
     this.isRecording.set(true)
