@@ -16,7 +16,7 @@ export class AudioService {
 
     const preferred = 'audio/webm;codecs=opus';
     const mime = MediaRecorder.isTypeSupported(preferred) ? preferred : 'audio/webm';
-    this.recorder = new MediaRecorder(this.stream, {mimeType: mime});
+    this.recorder = new MediaRecorder(this.stream, {mimeType: mime, audioBitsPerSecond: 128000});
     
     this.recorder.ondataavailable = (e) => e.data.size && onChunk(e.data);
     this.recorder.start(this.chunkMs);
