@@ -1,6 +1,5 @@
-import { Component, inject, computed, signal } from '@angular/core';
-import { AudioService } from '../../../core/services/audio.service';
-import { WsService } from '../../../core/services/ws.service';
+import { Component, inject, Output, EventEmitter } from '@angular/core';
+import { SpeechService } from '../../../core/services/speech.service';
 
 @Component({
   selector: 'app-voice-capture',
@@ -10,22 +9,18 @@ import { WsService } from '../../../core/services/ws.service';
   styleUrl: './voice-capture.component.css'
 })
 export class VoiceCaptureComponent {
-  audio = inject(AudioService);
-  ws = inject(WsService);
+  speech = inject(SpeechService);
+  @Output() speechResult = new EventEmitter<{text: string, final: boolean}>();
+  @Output() speechEnd = new EventEmitter<void>();
 
-  // recording = this.audio.isRecording;
-  // connected = this.ws.isConnected;
-
-  async toggle(){
-    if (!this.audio.isRecording()){
-      //START
-      this.ws.sendJson({type: 'beginUtterance'});
-      await this.audio.start((blob) => this.ws.sendBinary(blob));
-      
-    }else {
-      // STOP
-      this.audio.stop();
-      this.ws.sendJson({type: 'endUtterance'});
+  toggle() {
+    if (!this.speech.isListening()) {
+      this.speech.startListening(
+        (text, isFinal) => this.speechResult.emit({text, final: isFinal}),
+        () => this.speechEnd.emit()
+      );
+    } else {
+      this.speech.stopListening();
     }
   }
 }

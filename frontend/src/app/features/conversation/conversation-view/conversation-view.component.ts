@@ -53,6 +53,42 @@ export class ConversationViewComponent {
     );
   }
 
+  onSpeechResult(event: {text: string, final: boolean}) {
+    this.upsert('user', event.text, !event.final);
+  }
+
+  onSpeechEnd() {
+    const userText = this.messages().filter(m => m.role === 'user').pop()?.text || '';
+    if (userText) {
+      // Generate AI response
+      const response = this.generateResponse(userText);
+      this.upsert('assistant', response, false);
+      
+      // Convert to speech
+      this.speakText(response);
+    }
+  }
+
+  private generateResponse(userText: string): string {
+    const text = userText.toLowerCase();
+    if (text.includes('help') || text.includes('task')) {
+      return "I understand you need help with tasks. Let's break it down: choose one small task and set a 5-minute timer. What would you like to work on first?";
+    }
+    if (text.includes('stress') || text.includes('difficult')) {
+      return "I hear that you're feeling stressed. Take a deep breath. Let's start with something simple - what's one tiny step you can take right now?";
+    }
+    return "Great! I suggest focusing on one thing at a time. Pick your most important task and let's tackle it together. What's your priority right now?";
+  }
+
+  private speakText(text: string) {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      speechSynthesis.speak(utterance);
+    }
+  }
+
   private upsert(role:'user'|'assistant', text:string, partial:boolean){
     const list = this.messages();
     const last = list[list.length-1];

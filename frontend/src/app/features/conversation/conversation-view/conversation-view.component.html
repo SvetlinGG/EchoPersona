@@ -5,4 +5,4 @@
     <div class="bubble">{{m.text}}</div>
   </div>
 </section>
-<footer><app-voice-capture/></footer>
+<footer><app-voice-capture (speechResult)="onSpeechResult($event)" (speechEnd)="onSpeechEnd()"/></footer>

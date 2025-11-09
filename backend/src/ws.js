@@ -1,6 +1,7 @@
 // src/ws.js
 import { transcribeWebmOpusBufferToText } from './stt-whisper.js';
 import { elevenLabsTtsStream } from './tts-eleven.js';
+import { generateOpenAIResponse } from './openai-chat.js';
 
 export function handleWsConnection(ws) {
   send(ws, { type: 'hello', payload: { server: 'EchoPersona WS (real STT/TTS)' } });
@@ -30,7 +31,6 @@ export function handleWsConnection(ws) {
       // (1) STT (Whisper)
       let userText = '';
       try {
-        // optional: before the finale you can send fake partials for a "live" effect
         userText = await transcribeWebmOpusBufferToText(full);
       } catch (e) {
         console.error(e);
@@ -43,8 +43,14 @@ export function handleWsConnection(ws) {
       const emo = fakeEmotionFromText(userText);
       send(ws, { type: 'emotion', payload: emo });
 
-      // (3) Assistant text 
-      const reply = craftAssistantReply(userText, emo);
+      // (3) Assistant text (OpenAI)
+      let reply;
+      try {
+        reply = await generateOpenAIResponse(userText, emo);
+      } catch (e) {
+        console.error('OpenAI response error:', e);
+        reply = craftAssistantReply(userText, emo); // fallback
+      }
       send(ws, { type: 'assistantText', text: reply, final: true });
 
       // (4) ElevenLabs TTS → stream 
