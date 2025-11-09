@@ -57,4 +57,10 @@ export class ConversationViewComponent implements OnInit {
       )
     );
   }
+
+  simulate(){
+    // to voice-capture Component
+    this.ws.sendJson({ type: 'beginUtterance' });
+    setTimeout(() => this.ws.sendJson({ type: 'endUtterance' }), 2000);
+  }
 }
