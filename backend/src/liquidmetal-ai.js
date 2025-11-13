@@ -1,6 +1,5 @@
 import fetch from 'node-fetch';
 import FormData from 'form-data';
-import fs from 'fs';
 
 // LiquidMetal AI Chat Completion
 export async function generateLiquidMetalResponse(userText, emotion) {
@@ -15,7 +14,7 @@ export async function generateLiquidMetalResponse(userText, emotion) {
       messages: [
         {
           role: 'system',
-          content: 'You are a helpful AI assistant focused on productivity and emotional support. Give brief, actionable responses.'
+          content: `You are EchoPersona, an emotionally intelligent AI voice companion built for The AI Champion Ship hackathon. The user's detected emotion is: ${emotion?.label || 'neutral'}. Respond with empathy, understanding, and actionable micro-steps. Keep responses under 40 words and focus on breaking overwhelming tasks into tiny, achievable actions. Match their emotional energy.`
         },
         {
           role: 'user', 

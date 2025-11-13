@@ -88,17 +88,61 @@ function sendBinary(ws, buf) {
 
 function fakeEmotionFromText(text) {
   const t = (text || '').toLowerCase();
-  if (t.includes('fatigue') || t.includes('difficult')) return { valence: -0.2, arousal: 0.5, label: 'stressed' };
-  if (t.includes('joy') || t.includes('cool')) return { valence: 0.6, arousal: 0.6, label: 'happy' };
+  
+  // Stress indicators
+  if (t.includes('overwhelm') || t.includes('stress') || t.includes('difficult') || t.includes('tired') || t.includes('anxious')) {
+    return { valence: -0.3, arousal: 0.7, label: 'stressed' };
+  }
+  
+  // Positive indicators
+  if (t.includes('great') || t.includes('awesome') || t.includes('happy') || t.includes('excited') || t.includes('good')) {
+    return { valence: 0.7, arousal: 0.6, label: 'happy' };
+  }
+  
+  // Sadness indicators
+  if (t.includes('sad') || t.includes('down') || t.includes('depressed') || t.includes('lonely')) {
+    return { valence: -0.5, arousal: 0.2, label: 'sad' };
+  }
+  
+  // Energy indicators
+  if (t.includes('energetic') || t.includes('motivated') || t.includes('ready')) {
+    return { valence: 0.4, arousal: 0.8, label: 'energetic' };
+  }
+  
   return { valence: 0.0, arousal: 0.4, label: 'neutral' };
 }
 
 
 function craftAssistantReply(userText, emo) {
+  const responses = {
+    stressed: [
+      "I can hear the stress in your voice. Let's break this down into tiny steps. What's one 2-minute task you could do right now?",
+      "Take a deep breath with me. Now, what's the smallest possible step forward you could take?",
+      "I understand you're feeling overwhelmed. Let's focus on just ONE thing. What matters most right now?"
+    ],
+    happy: [
+      "I love your positive energy! Let's channel that into something productive. What exciting project are you working on?",
+      "Your enthusiasm is contagious! What would you like to accomplish while you're feeling this motivated?",
+      "Great mood! Perfect time to tackle something challenging. What's been on your to-do list?"
+    ],
+    sad: [
+      "I hear that you're going through a tough time. Sometimes the smallest step forward is the biggest victory. What's one gentle thing you could do for yourself?",
+      "It's okay to feel this way. Let's start with something simple and comforting. What would make you feel just 1% better?",
+      "I'm here with you. What's one tiny thing that might bring a small spark of accomplishment?"
+    ],
+    energetic: [
+      "I can feel your energy! This is perfect timing for tackling bigger goals. What's something ambitious you've been putting off?",
+      "Your motivation is powerful right now! What's the most important thing you could accomplish today?",
+      "Amazing energy! Let's use this momentum. What's your biggest priority?"
+    ],
+    neutral: [
+      "Let's find your focus. What's one thing that would make today feel successful?",
+      "What's on your mind? I'm here to help you break it down into manageable pieces.",
+      "Ready to make progress? What would you like to work on together?"
+    ]
+  };
   
-  if (emo.label === 'stressed') {
-    return "I understand. Let's take a small first step: choose a simple 5-minute task and start a timer. Are you ready?";
-  }
-  return 'Great! I suggest two quick steps: 1) set a mini-goal for the next 5 minutes, 2) start a timer. Let me know how it goes.';
+  const emotionResponses = responses[emo.label] || responses.neutral;
+  return emotionResponses[Math.floor(Math.random() * emotionResponses.length)];
 }
 
