@@ -1,8 +1,7 @@
 // src/ws.js
 import { transcribeWebmOpusBufferToText } from './stt-whisper.js';
 import { elevenLabsTtsStream } from './tts-eleven.js';
-import { generateOpenAIResponse } from './openai-chat.js';
-import { generateRaindropResponse, transcribeRaindrop } from './raindrop-ai.js';
+import { generateLiquidMetalResponse, transcribeLiquidMetal } from './liquidmetal-ai.js';
 
 export function handleWsConnection(ws) {
   send(ws, { type: 'hello', payload: { server: 'EchoPersona WS (real STT/TTS)' } });
@@ -29,17 +28,34 @@ export function handleWsConnection(ws) {
       collecting = false;
       const full = Buffer.concat(audioBuffers);
 
-      // (1) STT (Mock - use browser speech recognition instead)
-      let userText = 'Hello, I need help with my tasks today';
-      console.log('Using mock transcription - implement browser speech recognition in frontend');
+      // (1) STT (LiquidMetal AI)
+      let userText = '';
+      try {
+        userText = await transcribeLiquidMetal(full);
+      } catch (e) {
+        console.error('LiquidMetal STT error:', e);
+        try {
+          userText = await transcribeWebmOpusBufferToText(full);
+        } catch (e2) {
+          console.error('Fallback STT failed:', e2);
+          send(ws, { type: 'finalTranscription', text: '[Failed transcription]' });
+          return;
+        }
+      }
       send(ws, { type: 'finalTranscription', text: userText });
 
       // (2) Emotion
       const emo = fakeEmotionFromText(userText);
       send(ws, { type: 'emotion', payload: emo });
 
-      // (3) Assistant text (Local AI)
-      const reply = craftAssistantReply(userText, emo);
+      // (3) Assistant text (LiquidMetal AI)
+      let reply;
+      try {
+        reply = await generateLiquidMetalResponse(userText, emo);
+      } catch (e) {
+        console.error('LiquidMetal response error:', e);
+        reply = craftAssistantReply(userText, emo);
+      }
       send(ws, { type: 'assistantText', text: reply, final: true });
 
       // (4) ElevenLabs TTS → stream 
