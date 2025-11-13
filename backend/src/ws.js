@@ -1,7 +1,10 @@
 // src/ws.js
-import { transcribeWebmOpusBufferToText } from './stt-whisper.js';
 import { elevenLabsTtsStream } from './tts-eleven.js';
-import { generateLiquidMetalResponse, transcribeLiquidMetal } from './liquidmetal-ai.js';
+import EchoPersonaRaindrop from './raindrop-mcp.js';
+import VultrServices from './vultr-integration.js';
+
+const raindrop = new EchoPersonaRaindrop();
+const vultr = new VultrServices();
 
 export function handleWsConnection(ws) {
   send(ws, { type: 'hello', payload: { server: 'EchoPersona WS (real STT/TTS)' } });
@@ -27,47 +30,36 @@ export function handleWsConnection(ws) {
     if (msg.type === 'endUtterance') {
       collecting = false;
       const full = Buffer.concat(audioBuffers);
+      const userId = msg.userId || 'anonymous';
 
-      // (1) STT (LiquidMetal AI)
-      let userText = '';
       try {
-        userText = await transcribeLiquidMetal(full);
-      } catch (e) {
-        console.error('LiquidMetal STT error:', e);
+        // Process voice input through Raindrop Platform
+        const result = await raindrop.processVoiceInput(full, userId);
+        
+        // Send transcription
+        send(ws, { type: 'finalTranscription', text: result.transcript });
+        
+        // Send emotion analysis
+        send(ws, { type: 'emotion', payload: result.emotion });
+        
+        // Send AI response
+        send(ws, { type: 'assistantText', text: result.response, final: true });
+
+        // ElevenLabs TTS streaming
+        send(ws, { type: 'ttsHeader', payload: { mode: 'chunks', mime: 'audio/mpeg' } });
         try {
-          userText = await transcribeWebmOpusBufferToText(full);
-        } catch (e2) {
-          console.error('Fallback STT failed:', e2);
-          send(ws, { type: 'finalTranscription', text: '[Failed transcription]' });
-          return;
+          for await (const chunk of elevenLabsTtsStream({ text: result.response })) {
+            sendBinary(ws, chunk);
+          }
+        } catch (e) {
+          console.error('TTS stream error:', e);
         }
+        send(ws, { type: 'done' });
+        
+      } catch (error) {
+        console.error('Raindrop processing error:', error);
+        send(ws, { type: 'finalTranscription', text: '[Processing failed]' });
       }
-      send(ws, { type: 'finalTranscription', text: userText });
-
-      // (2) Emotion
-      const emo = fakeEmotionFromText(userText);
-      send(ws, { type: 'emotion', payload: emo });
-
-      // (3) Assistant text (LiquidMetal AI)
-      let reply;
-      try {
-        reply = await generateLiquidMetalResponse(userText, emo);
-      } catch (e) {
-        console.error('LiquidMetal response error:', e);
-        reply = craftAssistantReply(userText, emo);
-      }
-      send(ws, { type: 'assistantText', text: reply, final: true });
-
-      // (4) ElevenLabs TTS → stream 
-      send(ws, { type: 'ttsHeader', payload: { mode: 'chunks', mime: 'audio/mpeg' } });
-      try {
-        for await (const chunk of elevenLabsTtsStream({ text: reply })) {
-          sendBinary(ws, chunk);
-        }
-      } catch (e) {
-        console.error('TTS stream error:', e);
-      }
-      send(ws, { type: 'done' });
     }
 
     if (msg.type === 'settings') {

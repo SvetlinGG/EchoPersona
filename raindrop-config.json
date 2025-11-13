@@ -1,0 +1,35 @@
+{
+  "name": "EchoPersona",
+  "description": "Emotionally intelligent AI voice companion",
+  "category": "Voice Agent",
+  "platform": "raindrop",
+  "services": {
+    "smartInference": {
+      "model": "gpt-4o-mini",
+      "temperature": 0.8,
+      "maxTokens": 100
+    },
+    "smartMemory": {
+      "conversationHistory": true,
+      "emotionalContext": true
+    },
+    "smartBuckets": {
+      "audioStorage": "voice-recordings",
+      "conversationLogs": "chat-history"
+    },
+    "smartSQL": {
+      "userProfiles": true,
+      "emotionAnalytics": true
+    }
+  },
+  "integrations": {
+    "elevenlabs": {
+      "required": true,
+      "purpose": "Text-to-speech for voice responses"
+    },
+    "vultr": {
+      "service": "cloud-compute",
+      "purpose": "Backend hosting and AI workload processing"
+    }
+  }
+}
