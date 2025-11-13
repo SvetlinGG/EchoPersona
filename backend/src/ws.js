@@ -2,6 +2,7 @@
 import { transcribeWebmOpusBufferToText } from './stt-whisper.js';
 import { elevenLabsTtsStream } from './tts-eleven.js';
 import { generateOpenAIResponse } from './openai-chat.js';
+import { generateRaindropResponse, transcribeRaindrop } from './raindrop-ai.js';
 
 export function handleWsConnection(ws) {
   send(ws, { type: 'hello', payload: { server: 'EchoPersona WS (real STT/TTS)' } });
@@ -28,29 +29,17 @@ export function handleWsConnection(ws) {
       collecting = false;
       const full = Buffer.concat(audioBuffers);
 
-      // (1) STT (Whisper)
-      let userText = '';
-      try {
-        userText = await transcribeWebmOpusBufferToText(full);
-      } catch (e) {
-        console.error(e);
-        send(ws, { type: 'finalTranscription', text: '[Failed transcription]' });
-        return;
-      }
+      // (1) STT (Mock - use browser speech recognition instead)
+      let userText = 'Hello, I need help with my tasks today';
+      console.log('Using mock transcription - implement browser speech recognition in frontend');
       send(ws, { type: 'finalTranscription', text: userText });
 
       // (2) Emotion
       const emo = fakeEmotionFromText(userText);
       send(ws, { type: 'emotion', payload: emo });
 
-      // (3) Assistant text (OpenAI)
-      let reply;
-      try {
-        reply = await generateOpenAIResponse(userText, emo);
-      } catch (e) {
-        console.error('OpenAI response error:', e);
-        reply = craftAssistantReply(userText, emo); // fallback
-      }
+      // (3) Assistant text (Local AI)
+      const reply = craftAssistantReply(userText, emo);
       send(ws, { type: 'assistantText', text: reply, final: true });
 
       // (4) ElevenLabs TTS → stream 
