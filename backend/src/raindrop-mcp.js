@@ -1,13 +1,31 @@
 // Raindrop MCP Server Integration for EchoPersona
-import { RaindropMCP } from '@raindrop/mcp-server';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 class EchoPersonaRaindrop {
   constructor() {
-    this.mcp = new RaindropMCP({
-      apiKey: process.env.LIQUIDMETAL_API_KEY,
-      projectName: 'EchoPersona'
+    this.apiKey = process.env.LIQUIDMETAL_API_KEY;
+    this.initializeMCP();
+  }
+
+  async initializeMCP() {
+    // Initialize MCP client for Raindrop Platform
+    const transport = new StdioClientTransport({
+      command: 'raindrop-mcp-server',
+      args: ['--api-key', this.apiKey]
     });
     
+    this.client = new Client({
+      name: 'EchoPersona',
+      version: '1.0.0'
+    }, {
+      capabilities: {
+        tools: {},
+        resources: {}
+      }
+    });
+    
+    await this.client.connect(transport);
     this.initializeSmartComponents();
   }
 
