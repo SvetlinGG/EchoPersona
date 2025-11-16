@@ -52,7 +52,7 @@ npm install
 # Setup environment
 echo "LIQUIDMETAL_API_KEY=${process.env.LIQUIDMETAL_API_KEY}" > .env
 echo "ELEVENLABS_API_KEY=${process.env.ELEVENLABS_API_KEY}" >> .env
-echo "PORT=3001" >> .env
+echo "PORT=4200" >> .env
 
 # Start services
 npm start &
@@ -64,7 +64,7 @@ server {
     server_name _;
     
     location / {
-        proxy_pass http://localhost:3001;
+        proxy_pass http://localhost:4200;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \\$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -99,7 +99,7 @@ systemctl restart nginx
         frontend_protocol: 'http',
         frontend_port: 80,
         backend_protocol: 'http',
-        backend_port: 3001
+        backend_port: 4200
       }]
     });
 
