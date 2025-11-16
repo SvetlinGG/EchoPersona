@@ -41,4 +41,24 @@ export class WsService {
         if (typeof ev.data !== 'string') {
           this.onBinary?.(ev.data as ArrayBuffer);
           return;
-   
+        }
+        try { 
+          const obj = JSON.parse(ev.data as string);
+          this.onMessage?.(obj);
+        } catch (error) { 
+          console.error('Failed to parse message:', ev.data);
+        }
+      };
+    } catch (error) {
+      console.error('Failed to create WebSocket:', error);
+    }
+  }
+
+  sendJson(obj: any){
+    if ( this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(obj));
+  }
+
+  sendBinary( buf: ArrayBuffer | Blob){
+    if ( this.ws?.readyState === WebSocket.OPEN) this.ws.send(buf);
+  }
+}
