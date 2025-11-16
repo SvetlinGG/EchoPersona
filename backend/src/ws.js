@@ -41,17 +41,44 @@ export function handleWsConnection(ws) {
       const full = Buffer.concat(audioBuffers);
       console.log('Total audio buffer size:', full.length);
       
-      // Simple mock transcription without Deepgram
-      const mockTranscript = `You said something (${new Date().toLocaleTimeString()})`;
-      send(ws, { type: 'finalTranscription', text: mockTranscript });
-      
-      const emotion = fakeEmotionFromText(mockTranscript);
-      send(ws, { type: 'emotion', payload: emotion });
-      
-      const response = craftAssistantReply(mockTranscript, emotion);
-      send(ws, { type: 'assistantText', text: response, final: true });
-      
-      console.log('Mock response sent successfully');
+      try {
+        // Use real Deepgram transcription
+        const { transcribeWebmOpusBufferToText } = await import('./stt-deepgram.js');
+        const transcript = await transcribeWebmOpusBufferToText(full);
+        send(ws, { type: 'finalTranscription', text: transcript });
+        
+        const emotion = fakeEmotionFromText(transcript);
+        send(ws, { type: 'emotion', payload: emotion });
+        
+        const response = craftAssistantReply(transcript, emotion);
+        send(ws, { type: 'assistantText', text: response, final: true });
+        
+        // Add TTS streaming
+        try {
+          const { elevenLabsTtsStream } = await import('./tts-eleven.js');
+          send(ws, { type: 'ttsHeader', payload: { mode: 'chunks', mime: 'audio/mpeg' } });
+          for await (const chunk of elevenLabsTtsStream({ text: response })) {
+            sendBinary(ws, chunk);
+          }
+          send(ws, { type: 'done' });
+        } catch (ttsError) {
+          console.error('TTS error:', ttsError);
+        }
+        
+        console.log('Real transcription:', transcript);
+      } catch (error) {
+        console.error('Deepgram error:', error);
+        // Fallback to mock
+        const mockTranscript = `You said something (${new Date().toLocaleTimeString()})`;
+        send(ws, { type: 'finalTranscription', text: mockTranscript });
+        const emotion = fakeEmotionFromText(mockTranscript);
+        const response = craftAssistantReply(mockTranscript, emotion);
+        send(ws, { type: 'assistantText', text: response, final: true });
+        
+        // Mock TTS
+        send(ws, { type: 'ttsUrl', payload: { url: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT' });
+        send(ws, { type: 'done' });
+      }
     }
 
     if (msg.type === 'settings') {
