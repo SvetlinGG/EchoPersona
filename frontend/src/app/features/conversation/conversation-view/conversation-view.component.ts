@@ -25,7 +25,7 @@ export class ConversationViewComponent {
 
   constructor() {
     
-    this.ws.connect('ws://localhost:3001/ws',
+    this.ws.connect('ws://localhost:4200/ws',
       
       (msg) => {
         switch (msg.type) {
