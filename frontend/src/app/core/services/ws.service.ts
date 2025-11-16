@@ -14,27 +14,44 @@ export class WsService {
   private onBinary?: BinHandler;
 
   connect(url: string, onMsg?: MsgHandler, onBin?: BinHandler){
+    console.log('Attempting to connect to:', url);
     this.onMessage = onMsg;
     this.onBinary = onBin;
-    this.ws = new WebSocket(url);
-    this.ws.binaryType = 'arraybuffer';
+    
+    try {
+      this.ws = new WebSocket(url);
+      this.ws.binaryType = 'arraybuffer';
 
-    this.ws.onopen = () => this.isConnected.set(true);
-    this.ws.onclose = () => this.isConnected.set(false);
-
-    this.ws.onmessage = (ev) => {
-
-      if ( typeof ev.data !== 'string'){
-        this.onBinary?.(ev.data as ArrayBuffer);
-        return;
-      }
-      try { 
-        const obj = JSON.parse(ev.data as string);
-        this.onMessage?.(obj);
-      } catch (error) { 
-        (ev.data);
-      }
-    };
+      this.ws.onopen = () => {
+        console.log('WebSocket connected');
+        this.isConnected.set(true);
+      };
+      
+      this.ws.onclose = (event) => {
+        console.log('WebSocket closed:', event.code, event.reason);
+        this.isConnected.set(false);
+      };
+      
+      this.ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        this.isConnected.set(false);
+      };
+      
+      this.ws.onmessage = (ev) => {
+        if (typeof ev.data !== 'string') {
+          this.onBinary?.(ev.data as ArrayBuffer);
+          return;
+        }
+        try { 
+          const obj = JSON.parse(ev.data as string);
+          this.onMessage?.(obj);
+        } catch (error) { 
+          console.error('Failed to parse message:', ev.data);
+        }
+      };
+    } catch (error) {
+      console.error('Failed to create WebSocket:', error);
+    }
   }
 
   sendJson(obj: any){
