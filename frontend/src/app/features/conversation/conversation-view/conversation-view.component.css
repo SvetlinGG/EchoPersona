@@ -4,6 +4,14 @@
   display: block;
 }
 
+.debug {
+  background: rgba(0,0,0,0.1);
+  padding: 0.5rem;
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
 .chat {
   display: flex;
   flex-direction: column;

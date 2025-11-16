@@ -1,6 +1,6 @@
 // src/ws.js
-import { transcribeWebmOpusBufferToText, createRealtimeTranscription } from './stt-deepgram.js';
-import { elevenLabsTtsStream } from './tts-eleven.js';
+// import { transcribeWebmOpusBufferToText, createRealtimeTranscription } from './stt-deepgram.js';
+// import { elevenLabsTtsStream } from './tts-eleven.js';
 import EchoPersonaRaindrop from './raindrop-mcp.js';
 import VultrServices from './vultr-integration.js';
 
@@ -23,43 +23,35 @@ export function handleWsConnection(ws) {
     try { msg = JSON.parse(data.toString()); } catch { return; }
 
     if (msg.type === 'beginUtterance') {
+      console.log('Starting audio collection');
       collecting = true;
       audioBuffers = [];
-      // optional: send partialTranscription "" for UX
+      send(ws, { type: 'partialTranscription', text: '' });
     }
 
     if (msg.type === 'endUtterance') {
+      console.log('Ending audio collection, buffer size:', audioBuffers.length);
       collecting = false;
-      const full = Buffer.concat(audioBuffers);
-      const userId = msg.userId || 'anonymous';
-
-      try {
-        // Transcribe with Deepgram Nova-2
-        const transcript = await transcribeWebmOpusBufferToText(full);
-        send(ws, { type: 'finalTranscription', text: transcript });
-        
-        // Analyze emotion and generate response
-        const emotion = fakeEmotionFromText(transcript);
-        send(ws, { type: 'emotion', payload: emotion });
-        
-        const response = craftAssistantReply(transcript, emotion);
-        send(ws, { type: 'assistantText', text: response, final: true });
-
-        // ElevenLabs TTS streaming
-        send(ws, { type: 'ttsHeader', payload: { mode: 'chunks', mime: 'audio/mpeg' } });
-        try {
-          for await (const chunk of elevenLabsTtsStream({ text: result.response })) {
-            sendBinary(ws, chunk);
-          }
-        } catch (e) {
-          console.error('TTS stream error:', e);
-        }
-        send(ws, { type: 'done' });
-        
-      } catch (error) {
-        console.error('Raindrop processing error:', error);
-        send(ws, { type: 'finalTranscription', text: '[Processing failed]' });
+      
+      if (audioBuffers.length === 0) {
+        send(ws, { type: 'finalTranscription', text: 'No audio received' });
+        return;
       }
+      
+      const full = Buffer.concat(audioBuffers);
+      console.log('Total audio buffer size:', full.length);
+      
+      // Simple mock transcription without Deepgram
+      const mockTranscript = `You said something (${new Date().toLocaleTimeString()})`;
+      send(ws, { type: 'finalTranscription', text: mockTranscript });
+      
+      const emotion = fakeEmotionFromText(mockTranscript);
+      send(ws, { type: 'emotion', payload: emotion });
+      
+      const response = craftAssistantReply(mockTranscript, emotion);
+      send(ws, { type: 'assistantText', text: response, final: true });
+      
+      console.log('Mock response sent successfully');
     }
 
     if (msg.type === 'settings') {

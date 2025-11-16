@@ -1,8 +1,14 @@
 <section class="chat">
+  <div class="debug">Messages: {{messages().length}} | Connected: {{ws.isConnected()}}</div>
   <div *ngFor="let m of messages()"
        [class.user]="m.role==='user'"
        [class.assistant]="m.role==='assistant'">
-    <div class="bubble">{{m.text}}</div>
+    <div class="bubble">
+      <span class="meta">{{m.role}}</span>
+      <div class="text">{{m.text}}</div>
+    </div>
   </div>
 </section>
-<footer><app-voice-capture/></footer>
+<footer class="controls">
+  <app-voice-capture></app-voice-capture>
+</footer>
