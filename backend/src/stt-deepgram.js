@@ -52,6 +52,4 @@ export function createRealtimeTranscription(onTranscript, onError) {
 
     return {
         send: (audioData) => connection.send(audioData),
-        close: () => connection.finish()
-    };
-}
+        close: () => connection.finish(
