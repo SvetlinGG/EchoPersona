@@ -42,6 +42,17 @@ export class ConversationViewComponent {
           case 'hello':
             console.log('Connected to server:', msg.payload);
             break;
+          case 'ttsHeader':
+            this.msrc = msg.payload?.mode === 'chunks'
+              ? this.tts.createMediaSource(msg.payload?.mime ?? 'audio/mpeg')
+              : null;
+            break;
+          case 'ttsUrl':
+            this.tts.playUrl(msg.payload.url);
+            break;
+          case 'done':
+            this.msrc?.play(); this.msrc?.end();
+            break;
           default:
             console.log('Unknown message type:', msg.type);
         }
