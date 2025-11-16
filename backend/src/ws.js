@@ -1,4 +1,5 @@
 // src/ws.js
+import { transcribeWebmOpusBufferToText, createRealtimeTranscription } from './stt-deepgram.js';
 import { elevenLabsTtsStream } from './tts-eleven.js';
 import EchoPersonaRaindrop from './raindrop-mcp.js';
 import VultrServices from './vultr-integration.js';
@@ -33,17 +34,16 @@ export function handleWsConnection(ws) {
       const userId = msg.userId || 'anonymous';
 
       try {
-        // Process voice input through Raindrop Platform
-        const result = await raindrop.processVoiceInput(full, userId);
+        // Transcribe with Deepgram Nova-2
+        const transcript = await transcribeWebmOpusBufferToText(full);
+        send(ws, { type: 'finalTranscription', text: transcript });
         
-        // Send transcription
-        send(ws, { type: 'finalTranscription', text: result.transcript });
+        // Analyze emotion and generate response
+        const emotion = fakeEmotionFromText(transcript);
+        send(ws, { type: 'emotion', payload: emotion });
         
-        // Send emotion analysis
-        send(ws, { type: 'emotion', payload: result.emotion });
-        
-        // Send AI response
-        send(ws, { type: 'assistantText', text: result.response, final: true });
+        const response = craftAssistantReply(transcript, emotion);
+        send(ws, { type: 'assistantText', text: response, final: true });
 
         // ElevenLabs TTS streaming
         send(ws, { type: 'ttsHeader', payload: { mode: 'chunks', mime: 'audio/mpeg' } });
