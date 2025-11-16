@@ -13,6 +13,7 @@
     "nodemon": "^3.1.11"
   },
   "dependencies": {
+    "@deepgram/sdk": "^3.13.0",
     "@modelcontextprotocol/sdk": "^1.22.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -22,8 +23,7 @@
     "form-data": "^4.0.4",
     "node-fetch": "^3.3.2",
     "raindrop": "^1.0.3",
-    "ws": "^8.18.3",
-    "@deepgram/sdk": "^3.4.0"
+    "ws": "^8.18.3"
   },
   "description": ""
 }
