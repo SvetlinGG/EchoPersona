@@ -4,14 +4,14 @@ const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 
 export async function transcribeWebmOpusBufferToText(buf) {
     try {
-        const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
+        const { result, error } = await deepgram.listen.prerecorded.transcribeBuffer(
             buf,
             {
+                mimetype: 'audio/webm',
                 model: 'nova-2',
                 language: 'en',
                 smart_format: true,
-                punctuate: true,
-                diarize: false
+                punctuate: true
             }
         );
 

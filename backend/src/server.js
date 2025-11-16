@@ -16,7 +16,7 @@ app.get('/health', (req, res) => res.json({ ok: true, service: 'EchoPersona' }))
 app.use('/settings', settingsRoute);
 app.use('/persona', personaRoute);
 
-const PORT = process.env.PORT || 4200;
+const PORT = process.env.PORT || 3000;
 const WS_PATH = process.env.WS_PATH || '/ws';
 
 // HTTP + WS server
