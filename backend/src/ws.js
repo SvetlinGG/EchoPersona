@@ -15,7 +15,10 @@ export function handleWsConnection(ws) {
 
   ws.on('message', async (data, isBinary) => {
     if (isBinary) {
-      if (collecting) audioBuffers.push(Buffer.from(data));
+      if (collecting) {
+        audioBuffers.push(Buffer.from(data));
+        console.log('Received audio chunk:', data.byteLength, 'bytes. Total chunks:', audioBuffers.length);
+      }
       return;
     }
 
@@ -41,10 +44,26 @@ export function handleWsConnection(ws) {
       const full = Buffer.concat(audioBuffers);
       console.log('Total audio buffer size:', full.length);
       
+      if (full.length === 0) {
+        send(ws, { type: 'finalTranscription', text: 'No audio received' });
+        send(ws, { type: 'assistantText', text: 'I didn\'t hear anything. Please try speaking again.', final: true });
+        return;
+      }
+
       try {
-        // Use real Deepgram transcription
+        // Import and use real Deepgram transcription
         const { transcribeWebmOpusBufferToText } = await import('./stt-deepgram.js');
+        console.log('Using Deepgram for transcription, buffer size:', full.length);
+        
         const transcript = await transcribeWebmOpusBufferToText(full);
+        console.log('Deepgram transcript:', transcript);
+        
+        if (!transcript || transcript.trim() === '') {
+          send(ws, { type: 'finalTranscription', text: '[No speech detected]' });
+          send(ws, { type: 'assistantText', text: 'I couldn\'t understand what you said. Could you please try again?', final: true });
+          return;
+        }
+        
         send(ws, { type: 'finalTranscription', text: transcript });
         
         const emotion = fakeEmotionFromText(transcript);
@@ -63,21 +82,13 @@ export function handleWsConnection(ws) {
           send(ws, { type: 'done' });
         } catch (ttsError) {
           console.error('TTS error:', ttsError);
+          send(ws, { type: 'done' });
         }
         
-        console.log('Real transcription:', transcript);
       } catch (error) {
-        console.error('Deepgram error:', error);
-        // Fallback to mock
-        const mockTranscript = `You said something (${new Date().toLocaleTimeString()})`;
-        send(ws, { type: 'finalTranscription', text: mockTranscript });
-        const emotion = fakeEmotionFromText(mockTranscript);
-        const response = craftAssistantReply(mockTranscript, emotion);
-        send(ws, { type: 'assistantText', text: response, final: true });
-        
-        // Mock TTS
-        send(ws, { type: 'ttsUrl', payload: { url: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT' });
-        send(ws, { type: 'done' });
+        console.error('Deepgram transcription error:', error);
+        send(ws, { type: 'finalTranscription', text: '[Transcription failed]' });
+        send(ws, { type: 'assistantText', text: 'Sorry, I had trouble processing your speech. Please try again.', final: true });
       }
     }
 
