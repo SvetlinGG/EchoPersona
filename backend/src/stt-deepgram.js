@@ -15,16 +15,13 @@ export async function transcribeWebmOpusBufferToText(buf) {
         console.log('Deepgram API Key present:', !!process.env.DEEPGRAM_API_KEY);
         console.log('Buffer size:', buf.length);
         
-        const { result, error } = await deepgram.listen.prerecorded.transcribeBuffer(
+        const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
             buf,
             {
-                mimetype: 'audio/webm;codecs=opus',
                 model: 'nova-2',
                 language: 'en-US',
                 smart_format: true,
-                punctuate: true,
-                diarize: false,
-                utterances: false
+                punctuate: true
             }
         );
 

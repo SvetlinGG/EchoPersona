@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 
-export async function* elevenLabsTtsStream({ text, voiceId = 'Rachel', modelId = 'eleven_turbo_v2'}){
+export async function* elevenLabsTtsStream({ text, voiceId = '21m00Tcm4TlvDq8ikWAM', modelId = 'eleven_turbo_v2'}){
     // REST streaming (chunked transfer)
     const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=2`;
     const resp = await fetch( url, {
