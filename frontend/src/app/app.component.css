@@ -5,8 +5,8 @@
 
 .sidebar {
   width: 280px;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -20,7 +20,7 @@
 .sidebar-header h2 {
   margin: 0;
   font-size: 1.25rem;
-  color: var(--text-primary);
+  color: #1e293b;
   font-weight: 600;
 }
 
@@ -32,18 +32,18 @@
 .new-chat-btn {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: var(--primary);
+  background: #3b82f6;
   color: white;
   border: none;
   border-radius: 0.5rem;
   font-weight: 500;
   cursor: pointer;
   margin-bottom: 1.5rem;
-  transition: var(--transition);
+  transition: all 0.2s ease;
 }
 
 .new-chat-btn:hover {
-  background: var(--primary-dark);
+  background: #2563eb;
 }
 
 .nav-section {
@@ -53,7 +53,7 @@
 .nav-section h3 {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: #475569;
   margin: 0 0 0.5rem 0;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -72,21 +72,21 @@
 .nav-section a {
   display: block;
   padding: 0.5rem 0.75rem;
-  color: var(--text-secondary);
+  color: #475569;
   text-decoration: none;
   border-radius: 0.375rem;
   font-size: 0.875rem;
-  transition: var(--transition);
+  transition: all 0.2s ease;
 }
 
 .nav-section a:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
+  background: #e2e8f0;
+  color: #1e293b;
 }
 
 .sidebar-footer {
   padding: 1rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -94,16 +94,16 @@
 
 .sidebar-footer a {
   padding: 0.5rem 0.75rem;
-  color: var(--text-secondary);
+  color: #475569;
   text-decoration: none;
   border-radius: 0.375rem;
   font-size: 0.875rem;
-  transition: var(--transition);
+  transition: all 0.2s ease;
 }
 
 .sidebar-footer a:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
+  background: #e2e8f0;
+  color: #1e293b;
 }
 
 .main-content {
