@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
@@ -10,4 +10,13 @@ import { RouterLink, RouterOutlet } from '@angular/router';
 })
 export class AppComponent {
   title = 'frontend';
+
+  constructor(private router: Router) {}
+
+  startNewChat() {
+    // Navigate to conversation view and trigger new chat
+    this.router.navigate(['/']);
+    // Could emit event to clear conversation history
+    window.location.reload(); // Simple approach to clear current chat
+  }
 }

@@ -22,7 +22,7 @@ export function handleWsConnection(ws) {
       return;
     }
 
-    
+
     let msg;
     try { msg = JSON.parse(data.toString()); } catch { return; }
 
@@ -134,7 +134,6 @@ function fakeEmotionFromText(text) {
   
   return { valence: 0.0, arousal: 0.4, label: 'neutral' };
 }
-
 
 function craftAssistantReply(userText, emo) {
   const responses = {

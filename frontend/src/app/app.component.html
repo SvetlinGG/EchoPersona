@@ -1,12 +1,50 @@
-<header class="topbar">
-  <a class="title" routerLink="/">EchoPersona</a>
-  <nav>
-    <a routerLink="/" aria-label="Conversation">Conversation</a>
-    <a routerLink="/persona" aria-label="Persona Studio">Persona</a>
-    <a routerLink="/settings" aria-label="Settings">Settings</a>
-  </nav>
-</header>
-<main><router-outlet /></main>
-
-
-<!-- <router-outlet /> -->
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>EchoPersona</h2>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <button class="new-chat-btn" (click)="startNewChat()">+ New Chat</button>
+      
+      <div class="nav-section">
+        <h3>Conversation Topics</h3>
+        <ul>
+          <li><a href="#">Work & Productivity</a></li>
+          <li><a href="#">Personal Growth</a></li>
+          <li><a href="#">Stress Management</a></li>
+          <li><a href="#">Daily Planning</a></li>
+        </ul>
+      </div>
+      
+      <div class="nav-section">
+        <h3>Project Folders</h3>
+        <ul>
+          <li><a href="#">📁 Career Goals</a></li>
+          <li><a href="#">📁 Health & Wellness</a></li>
+          <li><a href="#">📁 Learning</a></li>
+          <li><a href="#">📁 Relationships</a></li>
+        </ul>
+      </div>
+      
+      <div class="nav-section">
+        <h3>Recent Chats</h3>
+        <ul>
+          <li><a href="#">💬 Morning motivation</a></li>
+          <li><a href="#">💬 Project planning</a></li>
+          <li><a href="#">💬 Stress relief session</a></li>
+          <li><a href="#">💬 Goal setting</a></li>
+        </ul>
+      </div>
+    </nav>
+    
+    <div class="sidebar-footer">
+      <a routerLink="/persona">🎭 Persona</a>
+      <a routerLink="/settings">⚙️ Settings</a>
+    </div>
+  </aside>
+  
+  <main class="main-content">
+    <router-outlet />
+  </main>
+</div>
