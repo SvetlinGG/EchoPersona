@@ -31,30 +31,43 @@ export class ConversationViewComponent {
         console.log('Received WebSocket message:', msg);
         switch (msg.type) {
           case 'partialTranscription':
-            if (msg.text) this.upsert('user', msg.text, true);
+            if (msg.text && msg.text.trim()) {
+              this.upsert('user', msg.text, true);
+            }
             break;
           case 'finalTranscription':
-            this.upsert('user', msg.text, false);
+            if (msg.text && msg.text.trim() && !msg.text.includes('[') && !msg.text.includes('No audio')) {
+              this.upsert('user', msg.text, false);
+            }
             break;
           case 'assistantText':
-            this.upsert('assistant', msg.text, false);
+            if (msg.text && msg.text.trim()) {
+              this.upsert('assistant', msg.text, false);
+            }
             break;
           case 'hello':
             console.log('Connected to server:', msg.payload);
             break;
           case 'ttsHeader':
+            console.log('Starting TTS playback');
             this.msrc = msg.payload?.mode === 'chunks'
               ? this.tts.createMediaSource(msg.payload?.mime ?? 'audio/mpeg')
               : null;
             break;
           case 'ttsUrl':
+            console.log('Playing TTS from URL');
             this.tts.playUrl(msg.payload.url);
             break;
           case 'done':
-            this.msrc?.play(); this.msrc?.end();
+            console.log('TTS playback complete');
+            if (this.msrc) {
+              this.msrc.play();
+              this.msrc.end();
+              this.msrc = null;
+            }
             break;
           default:
-            console.log('Unknown message type:', msg.type);
+            console.log('Unknown message type:', msg.type, msg);
         }
       },
       
@@ -65,6 +78,8 @@ export class ConversationViewComponent {
 
 
   private upsert(role:'user'|'assistant', text:string, partial:boolean){
+    if (!text || text.trim() === '') return;
+    
     console.log('Upserting message:', {role, text, partial});
     const list = this.messages();
     const last = list[list.length-1];
@@ -72,7 +87,7 @@ export class ConversationViewComponent {
     if (last && last.role === role && partial) {
       const updated = [...list.slice(0, -1), {...last, text}];
       this.messages.set(updated);
-    } else {
+    } else if (!partial || !last || last.role !== role) {
       this.messages.set([...list, {role, text}]);
     }
     
