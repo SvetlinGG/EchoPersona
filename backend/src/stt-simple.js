@@ -1,18 +1,29 @@
 // Simple fallback transcription for testing
+let transcriptionCounter = 0;
+
 export async function simpleTranscribe(audioBuffer) {
-  // For demo purposes, return a mock transcription
-  const mockTranscriptions = [
-    "Hello, I'm testing the voice system",
-    "How are you doing today?",
-    "I need help with my work",
-    "I'm feeling stressed about my tasks",
-    "Can you help me stay motivated?",
-    "What should I focus on right now?"
+  // Simulate processing time
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // More realistic transcriptions that vary based on usage
+  const transcriptions = [
+    "Hello, can you help me with something?",
+    "I'm feeling a bit overwhelmed with my tasks today",
+    "What's the best way to stay productive?",
+    "I need some motivation to get started",
+    "How can I break down this big project?",
+    "I'm having trouble focusing, any suggestions?",
+    "Can you help me prioritize my work?",
+    "I'm feeling stressed about my deadlines",
+    "What should I work on first?",
+    "I need help organizing my thoughts"
   ];
   
-  // Return a random mock transcription
-  const randomIndex = Math.floor(Math.random() * mockTranscriptions.length);
-  return mockTranscriptions[randomIndex];
+  // Cycle through transcriptions to make it feel more natural
+  const index = transcriptionCounter % transcriptions.length;
+  transcriptionCounter++;
+  
+  return transcriptions[index];
 }
 
 // Convert WebM to WAV for better compatibility
