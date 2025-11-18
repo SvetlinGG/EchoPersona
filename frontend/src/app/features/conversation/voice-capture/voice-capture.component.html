@@ -1,1 +1,3 @@
-<button (click)="toggle()">{{ audio.isRecording() ? 'STOP' : 'SPEAK' }}</button>
+<button (click)="toggle()" [class.recording]="audio.isRecording()">
+  {{ audio.isRecording() ? '🛑 STOP' : '🎙️ SPEAK' }}
+</button>

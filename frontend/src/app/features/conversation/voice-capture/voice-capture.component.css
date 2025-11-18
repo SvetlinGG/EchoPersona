@@ -1,11 +1,41 @@
-.vc{
-    display: flex;
-    align-items: center;
-    gap: 1rem
+button {
+  padding: 0.75rem 2rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 2rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
-.status{
-    color:#9ca3af
+
+button:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
-.status .on{
-    color:#10b981
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Recording state */
+button.recording {
+  background: #ef4444;
+  animation: pulse 1.5s infinite;
+}
+
+button.recording:hover {
+  background: #dc2626;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 2px 20px rgba(239, 68, 68, 0.6);
+  }
 }
