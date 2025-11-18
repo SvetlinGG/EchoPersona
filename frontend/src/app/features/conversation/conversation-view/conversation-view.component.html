@@ -1,5 +1,9 @@
+<header class="voice-header">
+  <app-voice-capture></app-voice-capture>
+  <div class="connection-status">{{ws.isConnected() ? 'Connected' : 'Offline'}}</div>
+</header>
+
 <section class="chat">
-  <div class="debug">Messages: {{messages().length}} | Connected: {{ws.isConnected()}}</div>
   <div *ngFor="let m of messages()"
        [class.user]="m.role==='user'"
        [class.assistant]="m.role==='assistant'">
@@ -9,6 +13,3 @@
     </div>
   </div>
 </section>
-<footer class="controls">
-  <app-voice-capture></app-voice-capture>
-</footer>
