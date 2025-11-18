@@ -96,7 +96,17 @@ export function handleWsConnection(ws) {
       const emotion = fakeEmotionFromText(transcript);
       send(ws, { type: 'emotion', payload: emotion });
       
-      const response = craftAssistantReply(transcript, emotion);
+      // Generate real AI response
+      let response;
+      try {
+        const { generateLiquidMetalResponse } = await import('./liquidmetal-ai.js');
+        response = await generateLiquidMetalResponse(transcript, emotion);
+        console.log('LiquidMetal AI response:', response);
+      } catch (aiError) {
+        console.error('AI response failed:', aiError.message);
+        response = craftAssistantReply(transcript, emotion);
+      }
+      
       send(ws, { type: 'assistantText', text: response, final: true });
       
       // Add TTS streaming
