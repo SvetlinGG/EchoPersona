@@ -22,6 +22,7 @@ export function handleWsConnection(ws) {
       return;
     }
 
+    
     let msg;
     try { msg = JSON.parse(data.toString()); } catch { return; }
 
