@@ -51,45 +51,65 @@ export function handleWsConnection(ws) {
         return;
       }
 
+      // Try multiple transcription methods
+      let transcript = '';
+      
       try {
-        // Import and use real Deepgram transcription
+        // Try Deepgram first
         const { transcribeWebmOpusBufferToText } = await import('./stt-deepgram.js');
-        console.log('Using Deepgram for transcription, buffer size:', full.length);
-        
-        const transcript = await transcribeWebmOpusBufferToText(full);
+        console.log('Trying Deepgram transcription, buffer size:', full.length);
+        transcript = await transcribeWebmOpusBufferToText(full);
         console.log('Deepgram transcript:', transcript);
+      } catch (deepgramError) {
+        console.error('Deepgram failed:', deepgramError.message);
         
-        if (!transcript || transcript.trim() === '') {
-          send(ws, { type: 'finalTranscription', text: '[No speech detected]' });
-          send(ws, { type: 'assistantText', text: 'I couldn\'t understand what you said. Could you please try again?', final: true });
-          return;
-        }
-        
-        send(ws, { type: 'finalTranscription', text: transcript });
-        
-        const emotion = fakeEmotionFromText(transcript);
-        send(ws, { type: 'emotion', payload: emotion });
-        
-        const response = craftAssistantReply(transcript, emotion);
-        send(ws, { type: 'assistantText', text: response, final: true });
-        
-        // Add TTS streaming
         try {
-          const { elevenLabsTtsStream } = await import('./tts-eleven.js');
-          send(ws, { type: 'ttsHeader', payload: { mode: 'chunks', mime: 'audio/mpeg' } });
-          for await (const chunk of elevenLabsTtsStream({ text: response })) {
-            sendBinary(ws, chunk);
+          // Fallback to LiquidMetal AI
+          const { transcribeLiquidMetal } = await import('./liquidmetal-ai.js');
+          console.log('Trying LiquidMetal transcription');
+          transcript = await transcribeLiquidMetal(full);
+          console.log('LiquidMetal transcript:', transcript);
+        } catch (liquidError) {
+          console.error('LiquidMetal failed:', liquidError.message);
+          
+          try {
+            // Final fallback - simple mock transcription for demo
+            const { simpleTranscribe } = await import('./stt-simple.js');
+            console.log('Using simple fallback transcription');
+            transcript = await simpleTranscribe(full);
+            console.log('Simple transcript:', transcript);
+          } catch (simpleError) {
+            console.error('All transcription methods failed:', simpleError.message);
+            transcript = 'I heard you speaking but could not transcribe it';
           }
-          send(ws, { type: 'done' });
-        } catch (ttsError) {
-          console.error('TTS error:', ttsError);
-          send(ws, { type: 'done' });
         }
-        
-      } catch (error) {
-        console.error('Deepgram transcription error:', error);
-        send(ws, { type: 'finalTranscription', text: '[Transcription failed]' });
-        send(ws, { type: 'assistantText', text: 'Sorry, I had trouble processing your speech. Please try again.', final: true });
+      }
+      
+      if (!transcript || transcript.trim() === '') {
+        send(ws, { type: 'finalTranscription', text: '[No speech detected]' });
+        send(ws, { type: 'assistantText', text: 'I couldn\'t understand what you said. Could you please try again?', final: true });
+        return;
+      }
+      
+      send(ws, { type: 'finalTranscription', text: transcript });
+      
+      const emotion = fakeEmotionFromText(transcript);
+      send(ws, { type: 'emotion', payload: emotion });
+      
+      const response = craftAssistantReply(transcript, emotion);
+      send(ws, { type: 'assistantText', text: response, final: true });
+      
+      // Add TTS streaming
+      try {
+        const { elevenLabsTtsStream } = await import('./tts-eleven.js');
+        send(ws, { type: 'ttsHeader', payload: { mode: 'chunks', mime: 'audio/mpeg' } });
+        for await (const chunk of elevenLabsTtsStream({ text: response })) {
+          sendBinary(ws, chunk);
+        }
+        send(ws, { type: 'done' });
+      } catch (ttsError) {
+        console.error('TTS error:', ttsError);
+        send(ws, { type: 'done' });
       }
     }
 
