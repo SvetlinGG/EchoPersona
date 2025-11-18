@@ -109,17 +109,31 @@ export function handleWsConnection(ws) {
       
       send(ws, { type: 'assistantText', text: response, final: true });
       
-      // Add TTS streaming
+      // Add TTS streaming with fallback
       try {
         const { elevenLabsTtsStream } = await import('./tts-eleven.js');
+        console.log('Starting ElevenLabs TTS for:', response.substring(0, 50) + '...');
         send(ws, { type: 'ttsHeader', payload: { mode: 'chunks', mime: 'audio/mpeg' } });
+        
+        let chunkCount = 0;
         for await (const chunk of elevenLabsTtsStream({ text: response })) {
           sendBinary(ws, chunk);
+          chunkCount++;
         }
+        console.log(`TTS completed successfully with ${chunkCount} chunks`);
         send(ws, { type: 'done' });
       } catch (ttsError) {
-        console.error('TTS error:', ttsError);
-        send(ws, { type: 'done' });
+        console.error('ElevenLabs TTS failed:', ttsError.message);
+        
+        // Fallback: Use browser's built-in speech synthesis
+        try {
+          send(ws, { type: 'ttsText', text: response });
+          send(ws, { type: 'done' });
+          console.log('Using browser TTS fallback');
+        } catch (fallbackError) {
+          console.error('All TTS methods failed:', fallbackError.message);
+          send(ws, { type: 'done' });
+        }
       }
     }
 

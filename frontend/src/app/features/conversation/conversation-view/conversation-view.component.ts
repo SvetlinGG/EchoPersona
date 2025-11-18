@@ -58,6 +58,10 @@ export class ConversationViewComponent {
             console.log('Playing TTS from URL');
             this.tts.playUrl(msg.payload.url);
             break;
+          case 'ttsText':
+            console.log('Using browser TTS fallback');
+            this.speakText(msg.text);
+            break;
           case 'done':
             console.log('TTS playback complete');
             if (this.msrc) {
@@ -73,6 +77,32 @@ export class ConversationViewComponent {
       
       (buf) => this.msrc?.append(buf)
     );
+  }
+
+  private speakText(text: string) {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.9;
+      utterance.pitch = 1.0;
+      utterance.volume = 0.8;
+      
+      // Try to use a female voice
+      const voices = speechSynthesis.getVoices();
+      const femaleVoice = voices.find(voice => 
+        voice.name.toLowerCase().includes('female') || 
+        voice.name.toLowerCase().includes('samantha') ||
+        voice.name.toLowerCase().includes('karen')
+      );
+      
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      }
+      
+      speechSynthesis.speak(utterance);
+      console.log('Browser TTS started');
+    } else {
+      console.warn('Browser TTS not supported');
+    }
   }
 
 
