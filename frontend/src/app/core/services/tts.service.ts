@@ -5,26 +5,32 @@ export class TtsService {
 
   createMediaSource(mime: string) {
     if (!('MediaSource' in window) || !MediaSource.isTypeSupported(mime)) {
-      throw new Error(`MediaSource does not support ${mime}`);
+      console.warn(`MediaSource does not support ${mime}, falling back to blob`);
+      return this.createBlobAudio();
     }
 
     const ms = new MediaSource();
     const audio = new Audio();
     audio.src = URL.createObjectURL(ms);
+    audio.volume = 0.8;
 
     let sb: SourceBuffer | null = null;
     const queue: ArrayBuffer[] = [];
     let open = false;
 
     ms.addEventListener('sourceopen', () => {
-      sb = ms.addSourceBuffer(mime);
-      open = true;
+      try {
+        sb = ms.addSourceBuffer(mime);
+        open = true;
 
-      sb.addEventListener('updateend', () => {
-        if (queue.length > 0 && sb && !sb.updating) {
-          sb.appendBuffer(new Uint8Array(queue.shift()!));
-        }
-      });
+        sb.addEventListener('updateend', () => {
+          if (queue.length > 0 && sb && !sb.updating) {
+            sb.appendBuffer(new Uint8Array(queue.shift()!));
+          }
+        });
+      } catch (error) {
+        console.error('MediaSource error:', error);
+      }
     });
 
     const append = (chunk: ArrayBuffer) => {
@@ -36,19 +42,64 @@ export class TtsService {
         queue.push(chunk);
         return;
       }
-      sb.appendBuffer(new Uint8Array(chunk));
+      try {
+        sb.appendBuffer(new Uint8Array(chunk));
+      } catch (error) {
+        console.error('Append buffer error:', error);
+      }
     };
 
-    const play = () => audio.play().catch(() => {});
+    const play = () => {
+      audio.play().catch(error => {
+        console.error('Audio play error:', error);
+      });
+    };
+    
     const end = () => {
-      try { ms.endOfStream(); } catch {}
+      try { 
+        if (ms.readyState === 'open') {
+          ms.endOfStream(); 
+        }
+      } catch (error) {
+        console.error('End stream error:', error);
+      }
     };
 
     return { audio, append, play, end };
   }
 
+  private createBlobAudio() {
+    const chunks: ArrayBuffer[] = [];
+    let audio: HTMLAudioElement | null = null;
+
+    const append = (chunk: ArrayBuffer) => {
+      chunks.push(chunk);
+    };
+
+    const play = () => {
+      if (chunks.length > 0) {
+        const blob = new Blob(chunks, { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+        audio = new Audio(url);
+        audio.volume = 0.8;
+        audio.play().catch(error => {
+          console.error('Blob audio play error:', error);
+        });
+      }
+    };
+
+    const end = () => {
+      // Blob audio doesn't need explicit ending
+    };
+
+    return { audio: null, append, play, end };
+  }
+
   playUrl(url: string) {
     const audio = new Audio(url);
-    audio.play().catch(() => {});
+    audio.volume = 0.8;
+    audio.play().catch(error => {
+      console.error('URL audio play error:', error);
+    });
   }
 }
