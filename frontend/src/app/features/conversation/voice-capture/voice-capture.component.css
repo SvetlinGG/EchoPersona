@@ -1,20 +1,27 @@
 button {
   padding: 0.75rem 2rem;
-  background: var(--primary);
+  background: #3b82f6;
   color: white;
   border: none;
   border-radius: 2rem;
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
-  transition: var(--transition);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  min-width: 120px;
 }
 
 button:hover {
-  background: var(--primary-dark);
+  background: #2563eb;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+button span {
+  display: inline-block;
+  color: white;
+  font-weight: 600;
 }
 
 button:active {

@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { ThemeService } from './core/services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -10,8 +11,11 @@ import { Router, RouterLink, RouterOutlet } from '@angular/router';
 })
 export class AppComponent {
   title = 'frontend';
+  private themeService = inject(ThemeService);
 
-  constructor(private router: Router) {}
+  constructor(private router: Router) {
+    // Initialize theme service to load saved theme
+  }
 
   startNewChat() {
     // Navigate to conversation view and trigger new chat
