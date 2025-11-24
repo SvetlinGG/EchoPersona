@@ -99,31 +99,38 @@ export function handleWsConnection(ws) {
       // Real AI Conversation using Gemini
       let response;
       try {
-        const { PersonaStylistAgent } = await import('./gemini-stylist.js');
-        const gemini = new PersonaStylistAgent();
+        const conversationPrompt = `You are a helpful AI assistant. Answer this question directly and helpfully: "${transcript}"
         
-        // Use Gemini for real conversation
-        const conversationPrompt = `You are having a natural conversation. The person just said: "${transcript}". They seem ${emotion.label}. Respond naturally as a helpful friend in 1-2 sentences. Don't be robotic.`;
+Don't ask questions back. Give actual advice, examples, or answers. Be conversational but helpful.`;
         
-        const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: conversationPrompt }] }],
-            generationConfig: { temperature: 0.9, maxOutputTokens: 60 }
+            generationConfig: { 
+              temperature: 0.7, 
+              maxOutputTokens: 100,
+              topP: 0.8,
+              topK: 40
+            }
           })
         });
         
         if (geminiResponse.ok) {
           const data = await geminiResponse.json();
           response = data.candidates[0].content.parts[0].text.trim();
-          console.log('Gemini real conversation:', response);
+          console.log('Gemini conversation success:', response);
         } else {
-          throw new Error('Gemini failed');
+          const errorText = await geminiResponse.text();
+          console.error('Gemini API error:', geminiResponse.status, errorText);
+          throw new Error(`Gemini API failed: ${geminiResponse.status}`);
         }
       } catch (error) {
         console.error('Gemini conversation failed:', error);
-        response = `I hear you saying "${transcript}". How can I help you with that?`;
+        // Generate a real answer based on the question
+        response = generateRealAnswer(transcript);
+        console.log('Using fallback real answer:', response);
       }
       
       send(ws, { type: 'assistantText', text: response, final: true });
