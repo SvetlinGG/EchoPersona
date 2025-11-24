@@ -96,26 +96,35 @@ export function handleWsConnection(ws) {
       const emotion = fakeEmotionFromText(transcript);
       send(ws, { type: 'emotion', payload: emotion });
       
-      // Multi-Agent Response Generation
-      let rawResponse;
-      let finalResponse;
-      
-      // Agent 1: Content Generation (LiquidMetal AI)
+      // Real AI Conversation using Gemini
+      let response;
       try {
-        const { generateLiquidMetalResponse } = await import('./liquidmetal-ai.js');
-        rawResponse = await generateLiquidMetalResponse(transcript, emotion);
-        console.log('LiquidMetal AI (Content Agent):', rawResponse);
-      } catch (aiError) {
-        console.error('LiquidMetal AI failed:', aiError.message);
-        rawResponse = generateDynamicResponse(transcript, emotion);
-        console.log('Fallback Content Agent:', rawResponse);
+        const { PersonaStylistAgent } = await import('./gemini-stylist.js');
+        const gemini = new PersonaStylistAgent();
+        
+        // Use Gemini for real conversation
+        const conversationPrompt = `You are having a natural conversation. The person just said: "${transcript}". They seem ${emotion.label}. Respond naturally as a helpful friend in 1-2 sentences. Don't be robotic.`;
+        
+        const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: conversationPrompt }] }],
+            generationConfig: { temperature: 0.9, maxOutputTokens: 60 }
+          })
+        });
+        
+        if (geminiResponse.ok) {
+          const data = await geminiResponse.json();
+          response = data.candidates[0].content.parts[0].text.trim();
+          console.log('Gemini real conversation:', response);
+        } else {
+          throw new Error('Gemini failed');
+        }
+      } catch (error) {
+        console.error('Gemini conversation failed:', error);
+        response = `I hear you saying "${transcript}". How can I help you with that?`;
       }
-      
-      // Agent 2: Persona Styling (Temporarily Disabled for Testing)
-      finalResponse = rawResponse; // Use raw LiquidMetal response directly
-      console.log('Using raw LiquidMetal response:', finalResponse);
-      
-      const response = finalResponse;
       
       send(ws, { type: 'assistantText', text: response, final: true });
       
