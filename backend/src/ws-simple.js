@@ -54,6 +54,10 @@ export function handleWsConnection(ws) {
         send(ws, { type: 'done' });
       }
     }
+    } catch (messageError) {
+      console.error('Message handling error:', messageError);
+      send(ws, { type: 'assistantText', text: 'Something went wrong. Please try again.', final: true });
+    }
   });
 }
 
