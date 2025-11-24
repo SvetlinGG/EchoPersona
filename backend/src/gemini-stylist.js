@@ -9,10 +9,10 @@ export class PersonaStylistAgent {
 
   async styleResponse(rawResponse, emotion, persona = 'coach') {
     const personaPrompts = {
-      coach: "You are a motivational coach. Rewrite this response to be energetic, encouraging, and action-focused. Use short, punchy sentences.",
-      therapist: "You are an empathetic therapist. Rewrite this response to be calm, validating, and emotionally supportive. Use gentle, understanding language.",
-      motivator: "You are an enthusiastic motivator. Rewrite this response to be high-energy, inspiring, and confidence-building. Use exciting, uplifting words.",
-      friend: "You are a caring friend. Rewrite this response to be warm, casual, and supportive. Use friendly, conversational language."
+      coach: "supportive coach",
+      therapist: "understanding therapist", 
+      motivator: "encouraging friend",
+      friend: "caring friend"
     };
 
     const emotionContext = {
@@ -23,21 +23,14 @@ export class PersonaStylistAgent {
       neutral: "The user is in a balanced state and open to guidance."
     };
 
-    const prompt = `
-${personaPrompts[persona] || personaPrompts.coach}
+    const prompt = `You are having a natural conversation with someone who just said something to you. Respond as a helpful ${persona} would.
 
-Context: ${emotionContext[emotion.label] || emotionContext.neutral}
+What they said: "${rawResponse.replace('Original response: "', '').replace('"', '')}"
+Their emotional state: ${emotion.label}
 
-Original response: "${rawResponse}"
+Respond naturally in 1-2 sentences (under 30 words). Be conversational, not robotic. Don't repeat their words back to them.
 
-Requirements:
-- Keep it under 40 words
-- Match the ${emotion.label} emotional state
-- Sound natural and human
-- Be actionable and specific
-- Use the ${persona} persona style
-
-Rewritten response:`;
+Response:`;
 
     try {
       const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
@@ -78,37 +71,11 @@ Rewritten response:`;
   }
 
   fallbackStyling(text, persona, emotion) {
-    const styles = {
-      coach: {
-        prefix: "Let's do this! ",
-        suffix: " You've got this!",
-        transform: (t) => t.replace(/\./g, '!').replace(/you should/g, "let's")
-      },
-      therapist: {
-        prefix: "I understand. ",
-        suffix: " Take your time.",
-        transform: (t) => t.replace(/!/g, '.').replace(/must/g, "might want to")
-      },
-      motivator: {
-        prefix: "Amazing! ",
-        suffix: " You're unstoppable!",
-        transform: (t) => t.replace(/\./g, '!').toUpperCase()
-      },
-      friend: {
-        prefix: "Hey, ",
-        suffix: " What do you think?",
-        transform: (t) => t.replace(/you should/g, "maybe you could")
-      }
-    };
-
-    const style = styles[persona] || styles.coach;
-    let styled = style.transform(text);
-    
+    // Just return the original text with minimal styling
     if (emotion.label === 'stressed') {
-      styled = styled.toLowerCase().replace(/!/g, '.');
+      return text.replace(/!/g, '.').toLowerCase();
     }
-    
-    return `${style.prefix}${styled}${style.suffix}`;
+    return text;
   }
 }
 

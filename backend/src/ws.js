@@ -111,18 +111,9 @@ export function handleWsConnection(ws) {
         console.log('Fallback Content Agent:', rawResponse);
       }
       
-      // Agent 2: Persona Styling (Gemini Flash)
-      try {
-        const { PersonaStylistAgent } = await import('./gemini-stylist.js');
-        const stylist = new PersonaStylistAgent();
-        const currentPersona = 'coach'; // TODO: Get from user settings
-        
-        finalResponse = await stylist.styleResponse(rawResponse, emotion, currentPersona);
-        console.log('Gemini Stylist (Persona Agent):', finalResponse);
-      } catch (stylistError) {
-        console.error('Gemini Stylist failed:', stylistError.message);
-        finalResponse = rawResponse; // Use raw response if styling fails
-      }
+      // Agent 2: Persona Styling (Temporarily Disabled for Testing)
+      finalResponse = rawResponse; // Use raw LiquidMetal response directly
+      console.log('Using raw LiquidMetal response:', finalResponse);
       
       const response = finalResponse;
       
