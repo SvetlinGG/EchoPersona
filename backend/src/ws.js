@@ -99,12 +99,21 @@ export function handleWsConnection(ws) {
       // Generate real AI response
       let response;
       try {
-        const { generateLiquidMetalResponse } = await import('./liquidmetal-ai.js');
-        response = await generateLiquidMetalResponse(transcript, emotion);
-        console.log('LiquidMetal AI response:', response);
-      } catch (aiError) {
-        console.error('AI response failed:', aiError.message);
-        response = craftAssistantReply(transcript, emotion);
+        // Try OpenAI first (more reliable)
+        const { generateOpenAIResponse } = await import('./openai-chat.js');
+        response = await generateOpenAIResponse(transcript, emotion);
+        console.log('OpenAI response:', response);
+      } catch (openaiError) {
+        console.error('OpenAI failed:', openaiError.message);
+        try {
+          const { generateLiquidMetalResponse } = await import('./liquidmetal-ai.js');
+          response = await generateLiquidMetalResponse(transcript, emotion);
+          console.log('LiquidMetal AI response:', response);
+        } catch (aiError) {
+          console.error('All AI services failed:', aiError.message);
+          // Generate dynamic response based on user input
+          response = generateDynamicResponse(transcript, emotion);
+        }
       }
       
       send(ws, { type: 'assistantText', text: response, final: true });
@@ -179,36 +188,38 @@ function fakeEmotionFromText(text) {
   return { valence: 0.0, arousal: 0.4, label: 'neutral' };
 }
 
-function craftAssistantReply(userText, emo) {
-  const responses = {
-    stressed: [
-      "I can hear the stress in your voice. Let's break this down into tiny steps. What's one 2-minute task you could do right now?",
-      "Take a deep breath with me. Now, what's the smallest possible step forward you could take?",
-      "I understand you're feeling overwhelmed. Let's focus on just ONE thing. What matters most right now?"
-    ],
-    happy: [
-      "I love your positive energy! Let's channel that into something productive. What exciting project are you working on?",
-      "Your enthusiasm is contagious! What would you like to accomplish while you're feeling this motivated?",
-      "Great mood! Perfect time to tackle something challenging. What's been on your to-do list?"
-    ],
-    sad: [
-      "I hear that you're going through a tough time. Sometimes the smallest step forward is the biggest victory. What's one gentle thing you could do for yourself?",
-      "It's okay to feel this way. Let's start with something simple and comforting. What would make you feel just 1% better?",
-      "I'm here with you. What's one tiny thing that might bring a small spark of accomplishment?"
-    ],
-    energetic: [
-      "I can feel your energy! This is perfect timing for tackling bigger goals. What's something ambitious you've been putting off?",
-      "Your motivation is powerful right now! What's the most important thing you could accomplish today?",
-      "Amazing energy! Let's use this momentum. What's your biggest priority?"
-    ],
-    neutral: [
-      "Let's find your focus. What's one thing that would make today feel successful?",
-      "What's on your mind? I'm here to help you break it down into manageable pieces.",
-      "Ready to make progress? What would you like to work on together?"
-    ]
+function generateDynamicResponse(userText, emotion) {
+  const text = userText.toLowerCase();
+  
+  // Analyze what user is talking about
+  if (text.includes('work') || text.includes('job') || text.includes('project')) {
+    if (emotion.label === 'stressed') {
+      return `I understand work is feeling overwhelming right now. Let's break down your work tasks. What's the most urgent thing you need to handle today? We can tackle it step by step.`;
+    }
+    return `I hear you talking about work. What specific project or task would you like to focus on? I can help you organize your approach.`;
+  }
+  
+  if (text.includes('tired') || text.includes('exhausted') || text.includes('sleep')) {
+    return `It sounds like you're feeling drained. Your energy is important. Have you been getting enough rest? Maybe we should focus on something that gives you energy rather than drains it.`;
+  }
+  
+  if (text.includes('help') || text.includes('stuck') || text.includes('don\'t know')) {
+    return `I'm here to help you figure this out. From what you've told me, it sounds like you need some clarity. What's the main challenge you're facing right now?`;
+  }
+  
+  if (text.includes('time') || text.includes('deadline') || text.includes('schedule')) {
+    return `Time management can be tricky. Let's look at your priorities. What's the most important thing that needs your attention in the next hour?`;
+  }
+  
+  // Default personalized response based on emotion
+  const emotionResponses = {
+    stressed: `I can sense you're feeling stressed about "${userText}". Let's take this one small step at a time. What's the tiniest action you could take right now?`,
+    happy: `I love hearing the positivity in your voice when you talk about "${userText}"! How can we build on this good energy?`,
+    sad: `I hear the heaviness in your words about "${userText}". It's okay to feel this way. What's one small thing that might help right now?`,
+    energetic: `Your energy around "${userText}" is fantastic! Let's channel this motivation. What's your biggest goal here?`,
+    neutral: `You mentioned "${userText}". Tell me more about what's on your mind with this. How can I help you move forward?`
   };
   
-  const emotionResponses = responses[emo.label] || responses.neutral;
-  return emotionResponses[Math.floor(Math.random() * emotionResponses.length)];
+  return emotionResponses[emotion.label] || `I heard you say "${userText}". What would you like to explore or work on with this?`;
 }
 
