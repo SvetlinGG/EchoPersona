@@ -5,7 +5,7 @@ import http from 'http';
 import { WebSocketServer } from 'ws';
 import settingsRoute from './routes/settings.js';
 import personaRoute from './routes/persona.js';
-import { handleWsConnection } from './ws-real.js';
+import { handleWsConnection } from './ws-final.js';
 
 const app = express();
 app.use(cors());
