@@ -35,12 +35,47 @@ export function handleWsConnection(ws) {
         const full = Buffer.concat(audioBuffers);
         console.log('Processing audio buffer size:', full.length);
         
-        // Mock transcript for testing
-        const transcript = 'Hello, I need some advice today';
+        // Real STT
+        let transcript = 'I heard you speaking';
+        try {
+          const { transcribeWebmOpusBufferToText } = await import('./stt-deepgram.js');
+          transcript = await transcribeWebmOpusBufferToText(full);
+          console.log('Real transcript:', transcript);
+        } catch (sttError) {
+          console.error('STT failed:', sttError.message);
+          transcript = 'I heard you but couldn\'t understand clearly';
+        }
+        
         send(ws, { type: 'finalTranscription', text: transcript });
         
-        // Simple response without external APIs
-        const response = 'I\'m here to help! What specific area would you like advice on? I can help with productivity, wellness, or general life tips.';
+        // Real Gemini response
+        let response = 'I understand what you\'re saying.';
+        try {
+          const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: `Someone said: "${transcript}". Respond naturally and helpfully in 1-2 sentences.`
+                }]
+              }],
+              generationConfig: {
+                temperature: 0.8,
+                maxOutputTokens: 50
+              }
+            })
+          });
+          
+          if (geminiResponse.ok) {
+            const data = await geminiResponse.json();
+            response = data.candidates[0].content.parts[0].text.trim();
+            console.log('Gemini real response:', response);
+          }
+        } catch (geminiError) {
+          console.error('Gemini failed:', geminiError.message);
+          response = `I heard you say "${transcript}". That\'s interesting! Tell me more about that.`;
+        }
         
         send(ws, { type: 'assistantText', text: response, final: true });
         send(ws, { type: 'done' });
