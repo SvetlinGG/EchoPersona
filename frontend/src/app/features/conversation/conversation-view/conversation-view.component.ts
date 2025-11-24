@@ -25,7 +25,7 @@ export class ConversationViewComponent {
 
   constructor() {
     
-    this.ws.connect('ws://localhost:3000/ws',
+    this.ws.connect('ws://localhost:3001/ws',
       
       (msg) => {
         console.log('Received WebSocket message:', msg);
