@@ -129,6 +129,7 @@ Don't ask questions back. Give actual advice, examples, or answers. Be conversat
       } catch (error) {
         console.error('Gemini conversation failed:', error);
         // Generate a real answer based on the question
+        const { generateRealAnswer } = await import('./real-answers.js');
         response = generateRealAnswer(transcript);
         console.log('Using fallback real answer:', response);
       }
