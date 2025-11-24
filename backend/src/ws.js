@@ -96,25 +96,35 @@ export function handleWsConnection(ws) {
       const emotion = fakeEmotionFromText(transcript);
       send(ws, { type: 'emotion', payload: emotion });
       
-      // Generate real AI response
-      let response;
+      // Multi-Agent Response Generation
+      let rawResponse;
+      let finalResponse;
+      
+      // Agent 1: Content Generation (LiquidMetal AI)
       try {
-        // Try OpenAI first (more reliable)
-        const { generateOpenAIResponse } = await import('./openai-chat.js');
-        response = await generateOpenAIResponse(transcript, emotion);
-        console.log('OpenAI response:', response);
-      } catch (openaiError) {
-        console.error('OpenAI failed:', openaiError.message);
-        try {
-          const { generateLiquidMetalResponse } = await import('./liquidmetal-ai.js');
-          response = await generateLiquidMetalResponse(transcript, emotion);
-          console.log('LiquidMetal AI response:', response);
-        } catch (aiError) {
-          console.error('All AI services failed:', aiError.message);
-          // Generate dynamic response based on user input
-          response = generateDynamicResponse(transcript, emotion);
-        }
+        const { generateLiquidMetalResponse } = await import('./liquidmetal-ai.js');
+        rawResponse = await generateLiquidMetalResponse(transcript, emotion);
+        console.log('LiquidMetal AI (Content Agent):', rawResponse);
+      } catch (aiError) {
+        console.error('LiquidMetal AI failed:', aiError.message);
+        rawResponse = generateDynamicResponse(transcript, emotion);
+        console.log('Fallback Content Agent:', rawResponse);
       }
+      
+      // Agent 2: Persona Styling (Gemini Flash)
+      try {
+        const { PersonaStylistAgent } = await import('./gemini-stylist.js');
+        const stylist = new PersonaStylistAgent();
+        const currentPersona = 'coach'; // TODO: Get from user settings
+        
+        finalResponse = await stylist.styleResponse(rawResponse, emotion, currentPersona);
+        console.log('Gemini Stylist (Persona Agent):', finalResponse);
+      } catch (stylistError) {
+        console.error('Gemini Stylist failed:', stylistError.message);
+        finalResponse = rawResponse; // Use raw response if styling fails
+      }
+      
+      const response = finalResponse;
       
       send(ws, { type: 'assistantText', text: response, final: true });
       
