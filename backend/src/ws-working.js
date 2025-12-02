@@ -36,7 +36,7 @@ export function handleWsConnection(ws) {
       send(ws, { type: 'finalTranscription', text: transcript });
       
       // Generate intelligent response
-      const response = generateIntelligentResponse(transcript);
+      const response = await generateIntelligentResponse(transcript);
       console.log('💬 Response:', response);
       
       send(ws, { type: 'assistantText', text: response, final: true });
@@ -59,94 +59,50 @@ export function handleWsConnection(ws) {
   });
 }
 
-function generateIntelligentResponse(transcript) {
-  const text = transcript.toLowerCase();
-  
-  // Physics and Science
-  if (text.includes('gravity') && (text.includes('formula') || text.includes('law'))) {
-    return "The law of universal gravitation is F = G × (m₁ × m₂) / r². Where F is the gravitational force, G is the gravitational constant (6.67 × 10⁻¹¹), m₁ and m₂ are the masses of the objects, and r is the distance between their centers. This explains how every object with mass attracts every other object!";
+async function generateIntelligentResponse(transcript) {
+  // Use LiquidMetal AI for natural conversation
+  try {
+    const response = await fetch('https://api.liquidmetal.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.LIQUIDMETAL_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are EchoPersona, a warm and empathetic AI companion. Respond naturally and conversationally, like a helpful friend. Keep responses brief (1-2 sentences max) and engaging. No templates or robotic language.'
+          },
+          {
+            role: 'user',
+            content: transcript
+          }
+        ],
+        max_tokens: 100,
+        temperature: 0.8
+      })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.choices[0].message.content.trim();
+    }
+  } catch (error) {
+    console.log('LiquidMetal failed, using fallback');
   }
   
-  if (text.includes('newton') && text.includes('law')) {
-    return "Newton's three laws of motion: First law - an object at rest stays at rest unless acted upon by a force. Second law - F equals ma, force equals mass times acceleration. Third law - for every action there's an equal and opposite reaction. These laws govern all motion in our universe!";
-  }
-  
-  if (text.includes('einstein') || text.includes('relativity')) {
-    return "Einstein's theory of relativity revolutionized physics! E=mc² shows that mass and energy are interchangeable. Special relativity tells us that time and space are relative, and nothing can travel faster than light. General relativity describes gravity as the curvature of spacetime. Mind-blowing stuff!";
-  }
-  
-  // Books and Literature
-  if (text.includes('book') && (text.includes('recommend') || text.includes('suggest'))) {
-    return "I'd love to recommend some books! What genre interests you? For science fiction, try 'Dune' by Frank Herbert or 'The Martian' by Andy Weir. For fantasy, 'The Name of the Wind' by Patrick Rothfuss is amazing. For non-fiction, 'Sapiens' by Yuval Noah Harari is fascinating. What type of story are you in the mood for?";
-  }
-  
-  // Music
-  if (text.includes('music') || text.includes('song') || text.includes('play')) {
-    return "I love talking about music! While I can't actually play songs or control YouTube, I can definitely chat about music. What genre do you enjoy? Jazz, rock, classical, electronic? I can recommend artists or discuss music theory if you're interested!";
-  }
-  
-  // Health and Wellness
-  if (text.includes('stress') || text.includes('anxiety') || text.includes('worried')) {
-    return "Stress management is so important! Try the 4-7-8 breathing technique: breathe in for 4 counts, hold for 7, exhale for 8. Also helpful: take a 10-minute walk, do some stretching, listen to calming music, or practice mindfulness. What's been causing you stress lately?";
-  }
-  
-  if (text.includes('sleep') || text.includes('tired')) {
-    return "Good sleep is crucial for health! Try these tips: keep a consistent bedtime, avoid screens 1 hour before bed, keep your room cool and dark, avoid caffeine after 2 PM, and create a relaxing bedtime routine like reading or gentle stretching. How many hours of sleep do you usually get?";
-  }
-  
-  // Technology
-  if (text.includes('ai') || text.includes('artificial intelligence')) {
-    return "AI is fascinating! We're in an exciting era where AI can help with writing, coding, analysis, and creative tasks. Machine learning allows computers to learn patterns from data. I'm an example of conversational AI - I can understand and respond to natural language. What aspect of AI interests you most?";
-  }
-  
-  // Greetings and General
-  if (text.includes('hello') || text.includes('hi') || text.includes('how are you')) {
-    return "Hello! I'm doing great, thanks for asking! I'm here and ready to chat about whatever interests you. How's your day going? Is there anything specific you'd like to talk about or learn about?";
-  }
-  
-  if (text.includes('what') && text.includes('you') && text.includes('do')) {
-    return "I'm a conversational AI assistant! I can help explain concepts, answer questions, give advice, recommend books or movies, discuss science and technology, help with problem-solving, or just have a friendly chat. I love learning about what interests you. What would you like to explore together?";
-  }
-  
-  // More specific responses
-  if (text.includes('weather')) {
-    return "I don't have access to real-time weather data, but I can suggest checking weather.com or your local weather app. Are you planning something outdoors? I can give tips for different weather conditions!";
-  }
-  
-  if (text.includes('time') || text.includes('date')) {
-    return "I don't have access to the current time, but you can check your device's clock. Is there something time-sensitive you're working on? I can help with time management tips!";
-  }
-  
-  if (text.includes('food') || text.includes('recipe') || text.includes('cooking')) {
-    return "I love talking about food! Are you looking for recipe ideas, cooking tips, or nutrition advice? I can suggest healthy meals, cooking techniques, or discuss different cuisines. What kind of food interests you?";
-  }
-  
-  if (text.includes('exercise') || text.includes('workout') || text.includes('fitness')) {
-    return "Exercise is so important! For beginners, try 10-minute walks, bodyweight exercises like push-ups and squats, or yoga. The key is consistency over intensity. What's your current fitness level? I can suggest appropriate exercises!";
-  }
-  
-  if (text.includes('learn') || text.includes('study') || text.includes('education')) {
-    return "Learning is awesome! What subject interests you? I can help explain concepts, suggest study techniques, recommend resources, or discuss different learning methods. Active recall and spaced repetition are great techniques!";
-  }
-  
-  if (text.includes('work') || text.includes('job') || text.includes('career')) {
-    return "Career topics are important! Are you looking for productivity tips, job search advice, skill development, or work-life balance strategies? I can help with resume tips, interview preparation, or professional growth ideas.";
-  }
-  
-  if (text.includes('travel') || text.includes('vacation')) {
-    return "Travel sounds exciting! While I can't give real-time travel info, I can discuss destinations, travel tips, packing advice, or cultural insights. Where are you thinking of going, or what type of travel experience interests you?";
-  }
-  
-  // Conversational fallback responses (varied)
-  const fallbacks = [
-    `Hmm, "${transcript}" - that's something I haven't encountered before! Can you tell me more about what you're looking for? I'm curious to learn!`,
-    `Interesting topic! I'd love to help with "${transcript}" but I need a bit more context. What specifically would you like to know?`,
-    `That's a great question about "${transcript}"! I want to give you a helpful answer - can you elaborate on what aspect you're most interested in?`,
-    `I hear you asking about "${transcript}". While that's not my strongest area, I'm happy to explore it with you! What's the context?`,
-    `"${transcript}" sounds intriguing! I'd love to dive deeper into that topic with you. What got you interested in this?"`
+  // Simple conversational fallback
+  const responses = [
+    `That's interesting! Tell me more about that.`,
+    `I'd love to hear your thoughts on that.`,
+    `What made you think about that?`,
+    `That sounds important to you.`,
+    `I'm curious to know more about your perspective.`
   ];
   
-  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+  return responses[Math.floor(Math.random() * responses.length)];
 }
 
 function send(ws, obj) {
