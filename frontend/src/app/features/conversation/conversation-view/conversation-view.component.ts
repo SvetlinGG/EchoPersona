@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { VoiceCaptureComponent } from '../voice-capture/voice-capture.component';
 import { WsService } from '../../../core/services/ws.service';
 import { TtsService } from '../../../core/services/tts.service';
+import { ChatService } from '../../../core/services/chat.service';
 
 interface WsEvent {
   type: 'partialTranscription' | 'finalTranscription' | 'assistantText';
@@ -17,15 +18,28 @@ interface WsEvent {
   templateUrl: './conversation-view.component.html',
   styleUrl: './conversation-view.component.css'
 })
-export class ConversationViewComponent {
+export class ConversationViewComponent implements OnInit {
   ws = inject(WsService); // Make public for template
   private tts = inject(TtsService);
+  private chatService = inject(ChatService);
   messages = signal<{role:'user'|'assistant'; text:string}[]>([]);
   private msrc: ReturnType<TtsService['createMediaSource']> | null = null;
 
+  ngOnInit() {
+    // Load current chat messages if any
+    const currentMessages = this.chatService.getCurrentMessages();
+    if (currentMessages.length > 0) {
+      const formattedMessages = currentMessages.map(msg => ({
+        role: msg.role,
+        text: msg.text
+      }));
+      this.messages.set(formattedMessages);
+    }
+  }
+
   constructor() {
     
-    this.ws.connect('ws://localhost:3001/ws',
+    this.ws.connect('ws://localhost:3000/ws',
       
       (msg) => {
         console.log('Received WebSocket message:', msg);
