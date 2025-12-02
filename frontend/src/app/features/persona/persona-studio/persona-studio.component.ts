@@ -14,6 +14,5 @@ export class PersonaStudioComponent {
     const target = event.target as HTMLTextAreaElement;
     this.prompt.set(target.value);
   }
-  
   save(){ /* POST /persona */ }
 }
