@@ -108,8 +108,45 @@ function generateIntelligentResponse(transcript) {
     return "I'm a conversational AI assistant! I can help explain concepts, answer questions, give advice, recommend books or movies, discuss science and technology, help with problem-solving, or just have a friendly chat. I love learning about what interests you. What would you like to explore together?";
   }
   
-  // Default intelligent response
-  return `That's a really interesting question about ${transcript}. I'd love to help you explore that topic further! Could you tell me what specific aspect you're most curious about? I'm here to have a real conversation and share what I know.`;
+  // More specific responses
+  if (text.includes('weather')) {
+    return "I don't have access to real-time weather data, but I can suggest checking weather.com or your local weather app. Are you planning something outdoors? I can give tips for different weather conditions!";
+  }
+  
+  if (text.includes('time') || text.includes('date')) {
+    return "I don't have access to the current time, but you can check your device's clock. Is there something time-sensitive you're working on? I can help with time management tips!";
+  }
+  
+  if (text.includes('food') || text.includes('recipe') || text.includes('cooking')) {
+    return "I love talking about food! Are you looking for recipe ideas, cooking tips, or nutrition advice? I can suggest healthy meals, cooking techniques, or discuss different cuisines. What kind of food interests you?";
+  }
+  
+  if (text.includes('exercise') || text.includes('workout') || text.includes('fitness')) {
+    return "Exercise is so important! For beginners, try 10-minute walks, bodyweight exercises like push-ups and squats, or yoga. The key is consistency over intensity. What's your current fitness level? I can suggest appropriate exercises!";
+  }
+  
+  if (text.includes('learn') || text.includes('study') || text.includes('education')) {
+    return "Learning is awesome! What subject interests you? I can help explain concepts, suggest study techniques, recommend resources, or discuss different learning methods. Active recall and spaced repetition are great techniques!";
+  }
+  
+  if (text.includes('work') || text.includes('job') || text.includes('career')) {
+    return "Career topics are important! Are you looking for productivity tips, job search advice, skill development, or work-life balance strategies? I can help with resume tips, interview preparation, or professional growth ideas.";
+  }
+  
+  if (text.includes('travel') || text.includes('vacation')) {
+    return "Travel sounds exciting! While I can't give real-time travel info, I can discuss destinations, travel tips, packing advice, or cultural insights. Where are you thinking of going, or what type of travel experience interests you?";
+  }
+  
+  // Conversational fallback responses (varied)
+  const fallbacks = [
+    `Hmm, "${transcript}" - that's something I haven't encountered before! Can you tell me more about what you're looking for? I'm curious to learn!`,
+    `Interesting topic! I'd love to help with "${transcript}" but I need a bit more context. What specifically would you like to know?`,
+    `That's a great question about "${transcript}"! I want to give you a helpful answer - can you elaborate on what aspect you're most interested in?`,
+    `I hear you asking about "${transcript}". While that's not my strongest area, I'm happy to explore it with you! What's the context?`,
+    `"${transcript}" sounds intriguing! I'd love to dive deeper into that topic with you. What got you interested in this?"`
+  ];
+  
+  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
 }
 
 function send(ws, obj) {
