@@ -87,12 +87,36 @@ function getConversationalResponse(transcript) {
     return "Hey there! I'm doing well, thanks for asking. Just here chatting and trying to be helpful. What's going on with you today?";
   }
   
+  if (text.includes('stress') || text.includes('anxiety') || text.includes('worried')) {
+    return "Stress can be really tough. Try some deep breathing - in for 4, hold for 4, out for 4. Also, taking a short walk or doing some stretching can help. What's been stressing you out lately?";
+  }
+  
+  if (text.includes('pythagore') || text.includes('pythagorean') || text.includes('theorem')) {
+    return "Ah, the Pythagorean theorem! It's a² + b² = c², where c is the hypotenuse of a right triangle. Super useful in math and engineering. Are you working on some geometry problems?";
+  }
+  
+  if (text.includes('gravity') || text.includes('gravitational') || text.includes('attraction')) {
+    return "Newton's law of universal gravitation! The formula is F = G(m₁m₂)/r². Where F is the gravitational force, G is the gravitational constant, m₁ and m₂ are the masses, and r is the distance between them. Pretty amazing how everything attracts everything else!";
+  }
+  
+  if (text.includes('formula') || text.includes('equation') || text.includes('physics')) {
+    return "I love physics formulas! What specific formula are you looking for? Gravity, motion, energy, electricity? Just let me know what topic and I'll share the key equations.";
+  }
+  
+  if (text.includes('law') && (text.includes('newton') || text.includes('motion'))) {
+    return "Newton's laws are fundamental! First law: objects at rest stay at rest. Second law: F = ma (force equals mass times acceleration). Third law: every action has an equal and opposite reaction. Which one interests you most?";
+  }
+  
   if (text.includes('help') || text.includes('advice')) {
     return "I'm here to help! What's on your mind? Whether it's recommendations, advice, or just someone to talk to, I'm all ears.";
   }
   
-  // Natural conversational fallback
-  return `Interesting! So you're saying "${transcript}". I wish I could do more to help with that directly, but I'm limited to just chatting. What else can we talk about?`;
+  if (text.includes('information') || text.includes('explain') || text.includes('tell me')) {
+    return "I'd love to share what I know! What specific topic are you curious about? I can help with general knowledge, advice, or just have a conversation.";
+  }
+  
+  // Specific helpful response instead of template
+  return "That's interesting! I'd love to help you with that. Can you give me a bit more context so I can give you a better answer?";
 }
 
 function send(ws, obj) {
