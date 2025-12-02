@@ -10,30 +10,30 @@
       <div class="nav-section">
         <h3>Conversation Topics</h3>
         <ul>
-          <li><a href="#">Work & Productivity</a></li>
-          <li><a href="#">Personal Growth</a></li>
-          <li><a href="#">Stress Management</a></li>
-          <li><a href="#">Daily Planning</a></li>
+          <li><a (click)="startTopicChat('Work & Productivity')">Work & Productivity</a></li>
+          <li><a (click)="startTopicChat('Personal Growth')">Personal Growth</a></li>
+          <li><a (click)="startTopicChat('Stress Management')">Stress Management</a></li>
+          <li><a (click)="startTopicChat('Daily Planning')">Daily Planning</a></li>
         </ul>
       </div>
       
       <div class="nav-section">
         <h3>Project Folders</h3>
         <ul>
-          <li><a href="#">📁 Career Goals</a></li>
-          <li><a href="#">📁 Health & Wellness</a></li>
-          <li><a href="#">📁 Learning</a></li>
-          <li><a href="#">📁 Relationships</a></li>
+          <li><a (click)="openFolder('Career Goals')">📁 Career Goals</a></li>
+          <li><a (click)="openFolder('Health & Wellness')">📁 Health & Wellness</a></li>
+          <li><a (click)="openFolder('Learning')">📁 Learning</a></li>
+          <li><a (click)="openFolder('Relationships')">📁 Relationships</a></li>
         </ul>
       </div>
       
       <div class="nav-section">
         <h3>Recent Chats</h3>
         <ul>
-          <li><a href="#">💬 Morning motivation</a></li>
-          <li><a href="#">💬 Project planning</a></li>
-          <li><a href="#">💬 Stress relief session</a></li>
-          <li><a href="#">💬 Goal setting</a></li>
+          <li><a (click)="loadChat('Morning motivation')">💬 Morning motivation</a></li>
+          <li><a (click)="loadChat('Project planning')">💬 Project planning</a></li>
+          <li><a (click)="loadChat('Stress relief session')">💬 Stress relief session</a></li>
+          <li><a (click)="loadChat('Goal setting')">💬 Goal setting</a></li>
         </ul>
       </div>
     </nav>
