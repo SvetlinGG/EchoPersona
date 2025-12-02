@@ -70,36 +70,36 @@ export function handleWsConnection(ws) {
 function getRealAnswer(transcript) {
   const text = transcript.toLowerCase();
   
-  if (text.includes('sleep habits') || text.includes('good sleep')) {
-    return 'Good sleep habits include: going to bed at the same time every night, avoiding screens 1 hour before bed, keeping your bedroom cool and dark, avoiding caffeine after 2 PM, and creating a relaxing bedtime routine like reading or gentle stretching.';
+  if (text.includes('sleep') || text.includes('tired')) {
+    return "Oh, sleep issues? I totally get that. Try this - put your phone away an hour before bed and maybe read something light. Also, keep your room cool and dark. Trust me, it makes a huge difference!";
   }
   
-  if (text.includes('mental health') && text.includes('five')) {
-    return 'Here are 5 mental health tips: 1) Exercise regularly - even 20 minutes helps, 2) Practice mindfulness or meditation daily, 3) Maintain social connections with friends and family, 4) Get adequate sleep - 7-9 hours nightly, 5) Seek professional help when needed - therapy is valuable.';
+  if (text.includes('mental health') || text.includes('feeling')) {
+    return "Mental health is so important. You know what really helps me? Taking walks, even just 10 minutes. And talking to people - don't bottle things up. Have you tried any mindfulness apps?";
   }
   
-  if (text.includes('mental health') || text.includes('advice')) {
-    return 'For better mental health, focus on: regular physical activity, healthy sleep patterns, social connections, stress management techniques like deep breathing, and don\'t hesitate to talk to a counselor or therapist when you need support.';
+  if (text.includes('stress') || text.includes('anxious') || text.includes('overwhelm')) {
+    return "Ugh, stress is the worst! When I'm feeling overwhelmed, I do this breathing thing - breathe in for 4, hold for 7, out for 8. Sounds weird but it actually works. What's stressing you out?";
   }
   
-  if (text.includes('stress') || text.includes('anxious')) {
-    return 'To manage stress: try the 4-7-8 breathing technique (breathe in for 4, hold for 7, exhale for 8), take short walks, practice progressive muscle relaxation, limit caffeine, and break big tasks into smaller manageable pieces.';
+  if (text.includes('exercise') || text.includes('workout') || text.includes('fitness')) {
+    return "Exercise doesn't have to be crazy intense! I started with just dancing to music in my room. Or take the stairs instead of the elevator. Small stuff adds up, you know?";
   }
   
-  if (text.includes('exercise') || text.includes('fitness')) {
-    return 'Start with simple exercises: 10-minute walks, bodyweight squats, push-ups against a wall, stretching, or dancing to music. The key is consistency - even 15 minutes daily makes a difference. Find activities you enjoy!';
+  if (text.includes('work') || text.includes('productivity') || text.includes('focus')) {
+    return "Work stuff can be tough! I swear by the 25-minute focus thing - work for 25, break for 5. And put that phone in another room! What kind of work are you doing?";
   }
   
-  if (text.includes('productivity') || text.includes('focus')) {
-    return 'Boost productivity with: the Pomodoro Technique (25 minutes work, 5 minute break), removing phone distractions, tackling hardest tasks when energy is highest, and keeping a simple to-do list with just 3 priorities per day.';
+  if (text.includes('how are you') || text.includes('hello') || text.includes('hi')) {
+    return "Hey there! I'm doing pretty good, thanks for asking! Just here chatting with people and trying to be helpful. How's your day going?";
   }
   
-  if (text.includes('how are you') || text.includes('hello')) {
-    return 'I\'m doing great, thank you for asking! I\'m here and ready to help you with whatever you need. What\'s on your mind today?';
+  if (text.includes('advice') || text.includes('help') || text.includes('tip')) {
+    return "I'd love to help! What's going on? Are you dealing with something specific, or just looking for general life tips? I'm all ears!";
   }
   
-  // Default real response
-  return 'That\'s an interesting question about ' + transcript + '. Let me give you some practical advice on that topic. What specific part would you like me to focus on?';
+  // Natural conversational response
+  return `Hmm, that's interesting! So you're saying ${transcript}. Tell me more about that - what's the situation?`;
 }
 
 function send(ws, obj) {
