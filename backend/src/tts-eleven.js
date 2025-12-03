@@ -17,8 +17,7 @@ export async function* elevenLabsTtsStream({ text, voiceId = '21m00Tcm4TlvDq8ikW
                 similarity_boost: 0.85, 
                 style: 0.1, 
                 use_speaker_boost: false
-            },
-            output_format: 'mp3_22050_32'
+            }
         })
     });
 

@@ -26,9 +26,20 @@ export class TtsService {
 
         sb.addEventListener('updateend', () => {
           if (queue.length > 0 && sb && !sb.updating) {
-            sb.appendBuffer(new Uint8Array(queue.shift()!));
+            const chunk = queue.shift()!;
+            try {
+              sb.appendBuffer(new Uint8Array(chunk));
+            } catch (error) {
+              console.error('Buffer append error:', error);
+            }
           }
         });
+        
+        // Process initial queue
+        if (queue.length > 0) {
+          const chunk = queue.shift()!;
+          sb.appendBuffer(new Uint8Array(chunk));
+        }
       } catch (error) {
         console.error('MediaSource error:', error);
       }
@@ -51,9 +62,18 @@ export class TtsService {
     };
 
     const play = () => {
-      audio.play().catch(error => {
-        console.error('Audio play error:', error);
-      });
+      // Start playing immediately when first chunk arrives
+      if (audio.readyState >= 2) {
+        audio.play().catch(error => {
+          console.error('Audio play error:', error);
+        });
+      } else {
+        audio.addEventListener('canplay', () => {
+          audio.play().catch(error => {
+            console.error('Audio play error:', error);
+          });
+        }, { once: true });
+      }
     };
     
     const end = () => {
