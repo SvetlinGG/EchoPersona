@@ -62,7 +62,7 @@ export function handleWsConnection(ws) {
 async function generateIntelligentResponse(transcript) {
   console.log('🤖 Generating response for:', transcript);
   
-  // Try Anthropic Claude first
+  // Try Claude first (best quality)
   try {
     console.log('🔄 Trying Claude...');
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -95,7 +95,7 @@ async function generateIntelligentResponse(transcript) {
     console.log('❌ Claude error:', error.message);
   }
   
-  // Try Groq as backup
+  // Try Groq as backup (fastest)
   try {
     console.log('🔄 Trying Groq...');
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -105,7 +105,7 @@ async function generateIntelligentResponse(transcript) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama3-8b-8192',
+        model: 'llama-3.1-8b-instant',
         messages: [
           {
             role: 'system',

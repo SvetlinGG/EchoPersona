@@ -1,8 +1,8 @@
 import fetch from "node-fetch";
 
-export async function* elevenLabsTtsStream({ text, voiceId = '21m00Tcm4TlvDq8ikWAM', modelId = 'eleven_turbo_v2'}){
-    // REST streaming (chunked transfer)
-    const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=2`;
+export async function* elevenLabsTtsStream({ text, voiceId = '21m00Tcm4TlvDq8ikWAM', modelId = 'eleven_multilingual_v2'}){
+    // REST streaming (chunked transfer) - reduced latency optimization
+    const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=1`;
     const resp = await fetch( url, {
         method: 'POST',
         headers: {
@@ -12,7 +12,13 @@ export async function* elevenLabsTtsStream({ text, voiceId = '21m00Tcm4TlvDq8ikW
         body: JSON.stringify({
             text,
             model_id: modelId,
-            voice_settings: { stability: 0.5, similarity_boost: 0.8, style: 0.0, use_speaker_boost: true}
+            voice_settings: { 
+                stability: 0.7, 
+                similarity_boost: 0.75, 
+                style: 0.2, 
+                use_speaker_boost: false
+            },
+            output_format: 'mp3_44100_128'
         })
     });
 

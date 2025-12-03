@@ -12,7 +12,8 @@ export class TtsService {
     const ms = new MediaSource();
     const audio = new Audio();
     audio.src = URL.createObjectURL(ms);
-    audio.volume = 0.8;
+    audio.volume = 0.5;
+    audio.preload = 'auto';
 
     let sb: SourceBuffer | null = null;
     const queue: ArrayBuffer[] = [];
@@ -81,7 +82,8 @@ export class TtsService {
         const blob = new Blob(chunks, { type: 'audio/mpeg' });
         const url = URL.createObjectURL(blob);
         audio = new Audio(url);
-        audio.volume = 0.8;
+        audio.volume = 0.5;
+        audio.preload = 'auto';
         audio.play().catch(error => {
           console.error('Blob audio play error:', error);
         });
@@ -97,7 +99,8 @@ export class TtsService {
 
   playUrl(url: string) {
     const audio = new Audio(url);
-    audio.volume = 0.8;
+    audio.volume = 0.5;
+    audio.preload = 'auto';
     audio.play().catch(error => {
       console.error('URL audio play error:', error);
     });
