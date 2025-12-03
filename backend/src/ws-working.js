@@ -75,9 +75,10 @@ async function generateIntelligentResponse(transcript) {
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
         max_tokens: 100,
+        system: 'You are EchoPersona, a warm empathetic AI companion. Respond naturally like a friend. Keep it brief (1-2 sentences).',
         messages: [{
           role: 'user',
-          content: `You are EchoPersona, a warm empathetic AI companion. Respond naturally like a friend. Keep it brief (1-2 sentences). User said: "${transcript}"`
+          content: transcript
         }]
       })
     });
@@ -88,7 +89,8 @@ async function generateIntelligentResponse(transcript) {
       console.log('✅ Claude success:', aiResponse);
       return aiResponse;
     }
-    console.log('❌ Claude failed:', response.status);
+    const errorText = await response.text();
+    console.log('❌ Claude failed:', response.status, errorText);
   } catch (error) {
     console.log('❌ Claude error:', error.message);
   }
@@ -104,10 +106,16 @@ async function generateIntelligentResponse(transcript) {
       },
       body: JSON.stringify({
         model: 'llama3-8b-8192',
-        messages: [{
-          role: 'user',
-          content: `You are EchoPersona, a warm empathetic AI companion. Respond naturally like a friend. Keep it brief (1-2 sentences). User said: "${transcript}"`
-        }],
+        messages: [
+          {
+            role: 'system',
+            content: 'You are EchoPersona, a warm empathetic AI companion. Respond naturally like a friend. Keep it brief (1-2 sentences).'
+          },
+          {
+            role: 'user',
+            content: transcript
+          }
+        ],
         max_tokens: 80,
         temperature: 0.7
       })
@@ -119,7 +127,8 @@ async function generateIntelligentResponse(transcript) {
       console.log('✅ Groq success:', aiResponse);
       return aiResponse;
     }
-    console.log('❌ Groq failed:', response.status);
+    const errorText = await response.text();
+    console.log('❌ Groq failed:', response.status, errorText);
   } catch (error) {
     console.log('❌ Groq error:', error.message);
   }
