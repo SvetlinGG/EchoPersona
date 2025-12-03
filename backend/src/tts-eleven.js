@@ -13,12 +13,12 @@ export async function* elevenLabsTtsStream({ text, voiceId = '21m00Tcm4TlvDq8ikW
             text,
             model_id: modelId,
             voice_settings: { 
-                stability: 0.7, 
-                similarity_boost: 0.75, 
-                style: 0.2, 
+                stability: 0.8, 
+                similarity_boost: 0.85, 
+                style: 0.1, 
                 use_speaker_boost: false
             },
-            output_format: 'mp3_44100_128'
+            output_format: 'mp3_22050_32'
         })
     });
 
