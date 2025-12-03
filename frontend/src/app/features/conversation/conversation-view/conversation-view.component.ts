@@ -98,7 +98,7 @@ export class ConversationViewComponent implements OnInit {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 0.9;
       utterance.pitch = 1.0;
-      utterance.volume = 0.8;
+      utterance.volume = 0.5;
       
       // Try to use a female voice
       const voices = speechSynthesis.getVoices();
