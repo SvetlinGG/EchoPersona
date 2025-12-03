@@ -62,110 +62,84 @@ export function handleWsConnection(ws) {
 async function generateIntelligentResponse(transcript) {
   console.log('🤖 Generating response for:', transcript);
   
-  // Try OpenAI first
+  // Try Anthropic Claude first
   try {
-    console.log('🔄 Trying OpenAI...');
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    console.log('🔄 Trying Claude...');
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are EchoPersona, a warm and empathetic AI companion. Respond naturally and conversationally, like talking to a friend. Keep responses brief (1-2 sentences max). Be helpful and engaging. No robotic language.'
-          },
-          {
-            role: 'user',
-            content: transcript
-          }
-        ],
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 100,
+        messages: [{
+          role: 'user',
+          content: `You are EchoPersona, a warm empathetic AI companion. Respond naturally like a friend. Keep it brief (1-2 sentences). User said: "${transcript}"`
+        }]
+      })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      const aiResponse = data.content[0].text.trim();
+      console.log('✅ Claude success:', aiResponse);
+      return aiResponse;
+    }
+    console.log('❌ Claude failed:', response.status);
+  } catch (error) {
+    console.log('❌ Claude error:', error.message);
+  }
+  
+  // Try Groq as backup
+  try {
+    console.log('🔄 Trying Groq...');
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama3-8b-8192',
+        messages: [{
+          role: 'user',
+          content: `You are EchoPersona, a warm empathetic AI companion. Respond naturally like a friend. Keep it brief (1-2 sentences). User said: "${transcript}"`
+        }],
         max_tokens: 80,
         temperature: 0.7
       })
     });
     
-    console.log('📡 OpenAI response status:', response.status);
-    
     if (response.ok) {
       const data = await response.json();
       const aiResponse = data.choices[0].message.content.trim();
-      console.log('✅ OpenAI success:', aiResponse);
+      console.log('✅ Groq success:', aiResponse);
       return aiResponse;
-    } else {
-      const errorText = await response.text();
-      console.log('❌ OpenAI failed:', response.status, errorText);
     }
+    console.log('❌ Groq failed:', response.status);
   } catch (error) {
-    console.log('❌ OpenAI error:', error.message);
+    console.log('❌ Groq error:', error.message);
   }
   
-  // Try LiquidMetal as backup
-  try {
-    console.log('🔄 Trying LiquidMetal...');
-    const response = await fetch('https://api.liquidmetal.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.LIQUIDMETAL_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are EchoPersona, a warm and empathetic AI companion. Respond naturally and conversationally, like talking to a friend. Keep responses brief (1-2 sentences max). Be helpful and engaging.'
-          },
-          {
-            role: 'user',
-            content: transcript
-          }
-        ],
-        max_tokens: 80,
-        temperature: 0.7
-      })
-    });
-    
-    console.log('📡 LiquidMetal response status:', response.status);
-    
-    if (response.ok) {
-      const data = await response.json();
-      const aiResponse = data.choices[0].message.content.trim();
-      console.log('✅ LiquidMetal success:', aiResponse);
-      return aiResponse;
-    } else {
-      const errorText = await response.text();
-      console.log('❌ LiquidMetal failed:', response.status, errorText);
-    }
-  } catch (error) {
-    console.log('❌ LiquidMetal error:', error.message);
-  }
+  console.log('⚠️ Both APIs failed, using smart fallback');
   
-  console.log('⚠️ Both APIs failed, using intelligent fallback');
-  
-  // Basic intelligent responses without templates
   const text = transcript.toLowerCase();
   
   if (text.includes('pythagore') || text.includes('pythagor') || text.includes('triangle')) {
-    return "Ah, Pythagoras! His theorem is a² + b² = c² for right triangles. The hypotenuse squared equals the sum of the other two sides squared.";
+    return "Ah, Pythagoras! His theorem is a² + b² = c² for right triangles.";
   }
   
   if (text.includes('why') && text.includes('not answer')) {
-    return "Sorry about that! I'm here to help. What would you like to know?";
+    return "Sorry! I'm here to help. What would you like to know?";
   }
   
   if (text.includes('hello') || text.includes('hi')) {
-    return "Hey there! How's it going?";
+    return "Hey there! How's your day going?";
   }
   
-  if (text.includes('math') || text.includes('formula')) {
-    return "I love math! What specific topic are you curious about?";
-  }
-  
-  // Natural conversational responses
   return "I'm listening! What's on your mind?";
 }
 
