@@ -39,7 +39,7 @@ export class ConversationViewComponent implements OnInit {
 
   constructor() {
     
-    this.ws.connect('ws://localhost:3001/ws',
+    this.ws.connect('ws://localhost:3000/ws',
       
       (msg) => {
         console.log('Received WebSocket message:', msg);
