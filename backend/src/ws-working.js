@@ -78,7 +78,7 @@ export function handleWsConnection(ws) {
       const emotion = detectEmotionFromText(transcript);
       send(ws, { type: 'emotion', payload: emotion });
       
-      // Generate AI response using real AI APIs for natural conversation
+      // Generate AI response using ONLY real AI APIs - NO TEMPLATES
       let response;
       try {
         // Try OpenAI first for natural conversations
@@ -89,7 +89,7 @@ export function handleWsConnection(ws) {
         } 
         // Fallback to Gemini if OpenAI not available
         else if (process.env.GEMINI_API_KEY) {
-          // Much more natural, casual prompt
+          // Natural, casual conversation prompt
           const conversationPrompt = `Someone just said to you: "${transcript}"
 
 Respond naturally like you're talking to a friend. Use casual language, contractions, and be conversational. Keep it to 1-2 short sentences. Don't be formal or sound like a robot. Just respond like a real person would.`;
@@ -110,20 +110,29 @@ Respond naturally like you're talking to a friend. Use casual language, contract
           
           if (geminiResponse.ok) {
             const data = await geminiResponse.json();
-            response = data.candidates[0].content.parts[0].text.trim();
-            console.log('Gemini response:', response);
+            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+              response = data.candidates[0].content.parts[0].text.trim();
+              console.log('Gemini response:', response);
+            } else {
+              throw new Error('Invalid Gemini API response format');
+            }
           } else {
-            throw new Error(`Gemini API failed: ${geminiResponse.status}`);
+            const errorText = await geminiResponse.text();
+            throw new Error(`Gemini API failed: ${geminiResponse.status} - ${errorText}`);
           }
         }
-        // Final fallback to template-based responses
+        // NO TEMPLATES - require API key
         else {
-          response = await generateLiquidMetalResponse(transcript, emotion);
-          console.log('Template response:', response);
+          throw new Error('No AI API keys configured. Please add OPENAI_API_KEY or GEMINI_API_KEY to .env file');
         }
       } catch (error) {
         console.error('AI response generation failed:', error);
-        response = generateRealAnswer(transcript);
+        // Give helpful error message instead of template
+        if (error.message.includes('No AI API keys')) {
+          response = "I need an API key to chat with you. Please add OPENAI_API_KEY or GEMINI_API_KEY to your .env file.";
+        } else {
+          response = "Sorry, I'm having trouble connecting to the AI service right now. Please check your API keys and try again.";
+        }
       }
       
       send(ws, { type: 'assistantText', text: response, final: true });
@@ -158,7 +167,7 @@ Respond naturally like you're talking to a friend. Use casual language, contract
     const conversationId = wsConversationIds.get(ws);
     if (conversationId) {
       // Optionally clear history after delay to allow reconnection
-      setTimeout(() => {
+      setTimeout(async () => {
         const { conversationHistory } = await import('./openai-chat.js');
         if (conversationHistory && conversationHistory.has(conversationId)) {
           conversationHistory.delete(conversationId);
