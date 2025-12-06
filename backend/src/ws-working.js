@@ -150,6 +150,11 @@ Respond naturally like you're talking to a friend. Use casual language, contract
         if (!response && isGeminiValid) {
           try {
             console.log('🔄 Trying Gemini...');
+            
+            // Add timeout to fetch
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            
             const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -161,8 +166,11 @@ Respond naturally like you're talking to a friend. Use casual language, contract
                   topP: 0.95,
                   topK: 40
                 }
-              })
+              }),
+              signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
             
             if (geminiResponse.ok) {
               const data = await geminiResponse.json();
@@ -177,8 +185,16 @@ Respond naturally like you're talking to a friend. Use casual language, contract
               throw new Error(`Gemini API failed: ${geminiResponse.status} - ${errorText}`);
             }
           } catch (error) {
-            console.log('❌ Gemini failed:', error.message);
-            lastError = error;
+            if (error.name === 'AbortError') {
+              console.log('❌ Gemini failed: Request timeout');
+              lastError = new Error('Gemini API request timed out');
+            } else if (error.message.includes('fetch failed') || error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+              console.log('❌ Gemini failed: Network error');
+              lastError = new Error('Gemini API endpoint is unreachable');
+            } else {
+              console.log('❌ Gemini failed:', error.message);
+              lastError = error;
+            }
           }
         }
         
@@ -200,8 +216,11 @@ Respond naturally like you're talking to a friend. Use casual language, contract
                   role: 'user',
                   content: conversationPrompt
                 }]
-              })
+              }),
+              signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
             
             if (anthropicResponse.ok) {
               const data = await anthropicResponse.json();
@@ -212,8 +231,16 @@ Respond naturally like you're talking to a friend. Use casual language, contract
               throw new Error(`Anthropic API failed: ${anthropicResponse.status} - ${errorText}`);
             }
           } catch (error) {
-            console.log('❌ Anthropic failed:', error.message);
-            lastError = error;
+            if (error.name === 'AbortError') {
+              console.log('❌ Anthropic failed: Request timeout');
+              lastError = new Error('Anthropic API request timed out');
+            } else if (error.message.includes('fetch failed') || error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+              console.log('❌ Anthropic failed: Network error');
+              lastError = new Error('Anthropic API endpoint is unreachable');
+            } else {
+              console.log('❌ Anthropic failed:', error.message);
+              lastError = error;
+            }
           }
         }
         
@@ -221,6 +248,11 @@ Respond naturally like you're talking to a friend. Use casual language, contract
         if (!response && isGroqValid) {
           try {
             console.log('🔄 Trying Groq...');
+            
+            // Add timeout to fetch
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            
             const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
               method: 'POST',
               headers: {
@@ -232,30 +264,46 @@ Respond naturally like you're talking to a friend. Use casual language, contract
                 messages: [{
                   role: 'user',
                   content: conversationPrompt
-                }],
-                max_tokens: 80,
-                temperature: 0.9
-              })
-            });
-            
-            if (groqResponse.ok) {
-              const data = await groqResponse.json();
-              response = data.choices[0].message.content.trim();
-              console.log('✅ Groq response:', response);
-            } else {
-              const errorText = await groqResponse.text();
-              throw new Error(`Groq API failed: ${groqResponse.status} - ${errorText}`);
-            }
-          } catch (error) {
+              }],
+              max_tokens: 80,
+              temperature: 0.9
+            }),
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (groqResponse.ok) {
+            const data = await groqResponse.json();
+            response = data.choices[0].message.content.trim();
+            console.log('✅ Groq response:', response);
+          } else {
+            const errorText = await groqResponse.text();
+            throw new Error(`Groq API failed: ${groqResponse.status} - ${errorText}`);
+          }
+        } catch (error) {
+          if (error.name === 'AbortError') {
+            console.log('❌ Groq failed: Request timeout');
+            lastError = new Error('Groq API request timed out');
+          } else if (error.message.includes('fetch failed') || error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+            console.log('❌ Groq failed: Network error');
+            lastError = new Error('Groq API endpoint is unreachable');
+          } else {
             console.log('❌ Groq failed:', error.message);
             lastError = error;
           }
         }
+      }
         
-        // 5. Try LiquidMetal
+        // 5. Try LiquidMetal (with timeout and better error handling)
         if (!response && isLiquidMetalValid) {
           try {
             console.log('🔄 Trying LiquidMetal...');
+            
+            // Add timeout to fetch
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            
             const liquidmetalResponse = await fetch('https://api.liquidmetal.ai/v1/chat/completions', {
               method: 'POST',
               headers: {
@@ -273,8 +321,11 @@ Respond naturally like you're talking to a friend. Use casual language, contract
                 }],
                 max_tokens: 80,
                 temperature: 0.9
-              })
+              }),
+              signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
             
             if (liquidmetalResponse.ok) {
               const data = await liquidmetalResponse.json();
@@ -285,8 +336,16 @@ Respond naturally like you're talking to a friend. Use casual language, contract
               throw new Error(`LiquidMetal API failed: ${liquidmetalResponse.status} - ${errorText}`);
             }
           } catch (error) {
-            console.log('❌ LiquidMetal failed:', error.message);
-            lastError = error;
+            if (error.name === 'AbortError') {
+              console.log('❌ LiquidMetal failed: Request timeout');
+              lastError = new Error('LiquidMetal API request timed out');
+            } else if (error.message.includes('fetch failed') || error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+              console.log('❌ LiquidMetal failed: Network error - endpoint may be unavailable');
+              lastError = new Error('LiquidMetal API endpoint is unreachable');
+            } else {
+              console.log('❌ LiquidMetal failed:', error.message);
+              lastError = error;
+            }
           }
         }
         
@@ -306,13 +365,15 @@ Respond naturally like you're talking to a friend. Use casual language, contract
         if (error.message.includes('No valid AI API keys')) {
           response = "I need a valid API key to chat with you. Please add at least one valid API key (OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, GROQ_API_KEY, or LIQUIDMETAL_API_KEY) to the .env file.";
         } else if (error.message.includes('All configured AI APIs failed')) {
-          response = "All of your API keys appear to be invalid or expired. Please check and update your API keys in the .env file. You can get new keys from:\n- OpenAI: https://platform.openai.com/api-keys\n- Gemini: https://makersuite.google.com/app/apikey\n- Anthropic: https://console.anthropic.com/\n- Groq: https://console.groq.com/\n- LiquidMetal: https://liquidmetal.ai/dashboard";
+          response = "All of your API keys appear to be invalid or expired. Please check and update your API keys in the .env file. You can get new keys from:\n- OpenAI: https://platform.openai.com/api-keys\n- Gemini: https://makersuite.google.com/app/apikey\n- Anthropic: https://console.anthropic.com/\n- Groq: https://console.groq.com/";
         } else if (error.message.includes('401') || error.message.includes('403')) {
           response = "Your API key appears to be invalid or expired. Please check your API keys in the .env file and make sure they are valid and active.";
         } else if (error.message.includes('429')) {
           response = "I'm hitting rate limits. Please wait a moment and try again.";
+        } else if (error.message.includes('fetch failed') || error.message.includes('timeout') || error.message.includes('unreachable')) {
+          response = "I'm having network connectivity issues. This could be due to:\n- Internet connection problems\n- API service temporarily unavailable\n- Firewall or network restrictions\n\nPlease check your internet connection and try again in a moment.";
         } else {
-          response = `Sorry, I'm having trouble connecting to the AI services. Error: ${error.message}. Please check your API keys in the .env file.`;
+          response = `Sorry, I'm having trouble connecting to the AI services. Error: ${error.message}. Please check your API keys in the .env file and your internet connection.`;
         }
       }
       
