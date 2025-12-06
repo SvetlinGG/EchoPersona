@@ -81,14 +81,21 @@ export function handleWsConnection(ws) {
       // Generate AI response using ONLY real AI APIs - NO TEMPLATES
       let response;
       try {
+        // Check if API keys are valid (not placeholders)
+        const openaiKey = process.env.OPENAI_API_KEY;
+        const geminiKey = process.env.GEMINI_API_KEY;
+        
+        const isOpenAIValid = openaiKey && !openaiKey.includes('your_') && !openaiKey.includes('_here');
+        const isGeminiValid = geminiKey && !geminiKey.includes('your_') && !geminiKey.includes('_here');
+        
         // Try OpenAI first for natural conversations
-        if (process.env.OPENAI_API_KEY) {
+        if (isOpenAIValid) {
           const conversationId = wsConversationIds.get(ws) || 'default';
           response = await generateOpenAIResponse(transcript, emotion, conversationId);
           console.log('OpenAI response:', response);
         } 
         // Fallback to Gemini if OpenAI not available
-        else if (process.env.GEMINI_API_KEY) {
+        else if (isGeminiValid) {
           // Natural, casual conversation prompt
           const conversationPrompt = `Someone just said to you: "${transcript}"
 
@@ -123,15 +130,21 @@ Respond naturally like you're talking to a friend. Use casual language, contract
         }
         // NO TEMPLATES - require API key
         else {
-          throw new Error('No AI API keys configured. Please add OPENAI_API_KEY or GEMINI_API_KEY to .env file');
+          throw new Error('No valid AI API keys configured. Please add your actual OPENAI_API_KEY or GEMINI_API_KEY to .env file (not placeholder values)');
         }
       } catch (error) {
         console.error('AI response generation failed:', error);
+        console.error('Error details:', error.message);
+        
         // Give helpful error message instead of template
-        if (error.message.includes('No AI API keys')) {
-          response = "I need an API key to chat with you. Please add OPENAI_API_KEY or GEMINI_API_KEY to your .env file.";
+        if (error.message.includes('No valid AI API keys') || error.message.includes('No AI API keys')) {
+          response = "I need a real API key to chat with you. Please add your actual OPENAI_API_KEY or GEMINI_API_KEY to the .env file (replace the placeholder values).";
+        } else if (error.message.includes('401') || error.message.includes('403')) {
+          response = "Your API key seems invalid or expired. Please check your OPENAI_API_KEY or GEMINI_API_KEY in the .env file.";
+        } else if (error.message.includes('429')) {
+          response = "I'm hitting rate limits. Please wait a moment and try again.";
         } else {
-          response = "Sorry, I'm having trouble connecting to the AI service right now. Please check your API keys and try again.";
+          response = `Sorry, I'm having trouble connecting: ${error.message}. Please check your API keys in the .env file.`;
         }
       }
       

@@ -52,7 +52,8 @@ export async function generateOpenAIResponse(userText, emotion, conversationId =
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI API failed: ${response.status}`);
+    const errorText = await response.text().catch(() => 'Unknown error');
+    throw new Error(`OpenAI API failed: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
