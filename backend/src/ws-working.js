@@ -85,8 +85,25 @@ export function handleWsConnection(ws) {
         const openaiKey = process.env.OPENAI_API_KEY;
         const geminiKey = process.env.GEMINI_API_KEY;
         
-        const isOpenAIValid = openaiKey && !openaiKey.includes('your_') && !openaiKey.includes('_here');
-        const isGeminiValid = geminiKey && !geminiKey.includes('your_') && !geminiKey.includes('_here');
+        // Validate keys - check they're not placeholder values
+        const isOpenAIValid = openaiKey && 
+          openaiKey.trim().length > 10 && 
+          !openaiKey.includes('your_') && 
+          !openaiKey.includes('_here') &&
+          (openaiKey.startsWith('sk-') || openaiKey.startsWith('sk_proj-'));
+        
+        const isGeminiValid = geminiKey && 
+          geminiKey.trim().length > 10 && 
+          !geminiKey.includes('your_') && 
+          !geminiKey.includes('_here') &&
+          geminiKey.startsWith('AIza');
+        
+        console.log('API Key validation:', { 
+          openaiValid: isOpenAIValid, 
+          geminiValid: isGeminiValid,
+          geminiKeyPresent: !!geminiKey,
+          geminiKeyStart: geminiKey ? geminiKey.substring(0, 10) : 'none'
+        });
         
         // Try OpenAI first for natural conversations
         if (isOpenAIValid) {
