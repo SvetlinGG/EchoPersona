@@ -84,6 +84,9 @@ export function handleWsConnection(ws) {
         // Check if API keys are valid (not placeholders)
         const openaiKey = process.env.OPENAI_API_KEY;
         const geminiKey = process.env.GEMINI_API_KEY;
+        const anthropicKey = process.env.ANTHROPIC_API_KEY;
+        const groqKey = process.env.GROQ_API_KEY;
+        const liquidmetalKey = process.env.LIQUIDMETAL_API_KEY;
         
         // Validate keys - check they're not placeholder values
         const isOpenAIValid = openaiKey && 
@@ -98,11 +101,29 @@ export function handleWsConnection(ws) {
           !geminiKey.includes('_here') &&
           geminiKey.startsWith('AIza');
         
+        const isAnthropicValid = anthropicKey && 
+          anthropicKey.trim().length > 10 && 
+          !anthropicKey.includes('your_') && 
+          !anthropicKey.includes('_here') &&
+          anthropicKey.startsWith('sk-ant-');
+        
+        const isGroqValid = groqKey && 
+          groqKey.trim().length > 10 && 
+          !groqKey.includes('your_') && 
+          !groqKey.includes('_here') &&
+          groqKey.startsWith('gsk_');
+        
+        const isLiquidMetalValid = liquidmetalKey && 
+          liquidmetalKey.trim().length > 10 && 
+          !liquidmetalKey.includes('your_') && 
+          !liquidmetalKey.includes('_here');
+        
         console.log('API Key validation:', { 
           openaiValid: isOpenAIValid, 
           geminiValid: isGeminiValid,
-          geminiKeyPresent: !!geminiKey,
-          geminiKeyStart: geminiKey ? geminiKey.substring(0, 10) : 'none'
+          anthropicValid: isAnthropicValid,
+          groqValid: isGroqValid,
+          liquidmetalValid: isLiquidMetalValid
         });
         
         // Try OpenAI first for natural conversations
@@ -118,7 +139,7 @@ export function handleWsConnection(ws) {
 
 Respond naturally like you're talking to a friend. Use casual language, contractions, and be conversational. Keep it to 1-2 short sentences. Don't be formal or sound like a robot. Just respond like a real person would.`;
           
-          const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+          const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -142,26 +163,214 @@ Respond naturally like you're talking to a friend. Use casual language, contract
             }
           } else {
             const errorText = await geminiResponse.text();
+            // If Gemini fails, try fallback APIs
             throw new Error(`Gemini API failed: ${geminiResponse.status} - ${errorText}`);
+          }
+        }
+        // Try Anthropic Claude as fallback
+        else if (isAnthropicValid) {
+          console.log('Trying Anthropic Claude...');
+          const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'x-api-key': anthropicKey,
+              'anthropic-version': '2023-06-01',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              model: 'claude-3-haiku-20240307',
+              max_tokens: 80,
+              messages: [{
+                role: 'user',
+                content: `Someone just said to you: "${transcript}". Respond naturally like you're talking to a friend. Use casual language, contractions, and be conversational. Keep it to 1-2 short sentences.`
+              }]
+            })
+          });
+          
+          if (anthropicResponse.ok) {
+            const data = await anthropicResponse.json();
+            response = data.content[0].text.trim();
+            console.log('Anthropic response:', response);
+          } else {
+            throw new Error(`Anthropic API failed: ${anthropicResponse.status}`);
+          }
+        }
+        // Try Groq as fallback
+        else if (isGroqValid) {
+          console.log('Trying Groq...');
+          const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${groqKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              model: 'llama-3.1-8b-instant',
+              messages: [{
+                role: 'user',
+                content: `Someone just said to you: "${transcript}". Respond naturally like you're talking to a friend. Use casual language, contractions, and be conversational. Keep it to 1-2 short sentences.`
+              }],
+              max_tokens: 80,
+              temperature: 0.9
+            })
+          });
+          
+          if (groqResponse.ok) {
+            const data = await groqResponse.json();
+            response = data.choices[0].message.content.trim();
+            console.log('Groq response:', response);
+          } else {
+            throw new Error(`Groq API failed: ${groqResponse.status}`);
+          }
+        }
+        // Try LiquidMetal as fallback
+        else if (isLiquidMetalValid) {
+          console.log('Trying LiquidMetal...');
+          const liquidmetalResponse = await fetch('https://api.liquidmetal.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${liquidmetalKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              model: 'gpt-3.5-turbo',
+              messages: [{
+                role: 'system',
+                content: 'You are a helpful AI assistant. Respond naturally and conversationally.'
+              }, {
+                role: 'user',
+                content: transcript
+              }],
+              max_tokens: 80,
+              temperature: 0.9
+            })
+          });
+          
+          if (liquidmetalResponse.ok) {
+            const data = await liquidmetalResponse.json();
+            response = data.choices[0].message.content.trim();
+            console.log('LiquidMetal response:', response);
+          } else {
+            throw new Error(`LiquidMetal API failed: ${liquidmetalResponse.status}`);
           }
         }
         // NO TEMPLATES - require API key
         else {
-          throw new Error('No valid AI API keys configured. Please add your actual OPENAI_API_KEY or GEMINI_API_KEY to .env file (not placeholder values)');
+          throw new Error('No valid AI API keys configured. Please add your actual OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, GROQ_API_KEY, or LIQUIDMETAL_API_KEY to .env file (not placeholder values)');
         }
       } catch (error) {
         console.error('AI response generation failed:', error);
         console.error('Error details:', error.message);
         
-        // Give helpful error message instead of template
-        if (error.message.includes('No valid AI API keys') || error.message.includes('No AI API keys')) {
-          response = "I need a real API key to chat with you. Please add your actual OPENAI_API_KEY or GEMINI_API_KEY to the .env file (replace the placeholder values).";
-        } else if (error.message.includes('401') || error.message.includes('403')) {
-          response = "Your API key seems invalid or expired. Please check your OPENAI_API_KEY or GEMINI_API_KEY in the .env file.";
-        } else if (error.message.includes('429')) {
-          response = "I'm hitting rate limits. Please wait a moment and try again.";
-        } else {
-          response = `Sorry, I'm having trouble connecting: ${error.message}. Please check your API keys in the .env file.`;
+        // If Gemini failed with 403 (leaked key), try fallback APIs
+        if (error.message.includes('Gemini API failed: 403') || error.message.includes('leaked')) {
+          console.log('Gemini key is invalid, trying fallback APIs...');
+          
+          // Try Anthropic
+          if (isAnthropicValid) {
+            try {
+              const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                  'x-api-key': anthropicKey,
+                  'anthropic-version': '2023-06-01',
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  model: 'claude-3-haiku-20240307',
+                  max_tokens: 80,
+                  messages: [{
+                    role: 'user',
+                    content: `Someone just said: "${transcript}". Respond naturally and conversationally in 1-2 short sentences.`
+                  }]
+                })
+              });
+              
+              if (anthropicResponse.ok) {
+                const data = await anthropicResponse.json();
+                response = data.content[0].text.trim();
+                console.log('✅ Anthropic fallback success');
+              }
+            } catch (e) {
+              console.error('Anthropic fallback failed:', e.message);
+            }
+          }
+          
+          // Try Groq if Anthropic didn't work
+          if (!response && isGroqValid) {
+            try {
+              const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${groqKey}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  model: 'llama-3.1-8b-instant',
+                  messages: [{
+                    role: 'user',
+                    content: `Someone just said: "${transcript}". Respond naturally and conversationally in 1-2 short sentences.`
+                  }],
+                  max_tokens: 80,
+                  temperature: 0.9
+                })
+              });
+              
+              if (groqResponse.ok) {
+                const data = await groqResponse.json();
+                response = data.choices[0].message.content.trim();
+                console.log('✅ Groq fallback success');
+              }
+            } catch (e) {
+              console.error('Groq fallback failed:', e.message);
+            }
+          }
+          
+          // Try LiquidMetal if others didn't work
+          if (!response && isLiquidMetalValid) {
+            try {
+              const liquidmetalResponse = await fetch('https://api.liquidmetal.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${liquidmetalKey}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  model: 'gpt-3.5-turbo',
+                  messages: [{
+                    role: 'system',
+                    content: 'You are a helpful AI assistant. Respond naturally and conversationally.'
+                  }, {
+                    role: 'user',
+                    content: transcript
+                  }],
+                  max_tokens: 80,
+                  temperature: 0.9
+                })
+              });
+              
+              if (liquidmetalResponse.ok) {
+                const data = await liquidmetalResponse.json();
+                response = data.choices[0].message.content.trim();
+                console.log('✅ LiquidMetal fallback success');
+              }
+            } catch (e) {
+              console.error('LiquidMetal fallback failed:', e.message);
+            }
+          }
+        }
+        
+        // If still no response, show error message
+        if (!response) {
+          if (error.message.includes('No valid AI API keys') || error.message.includes('No AI API keys')) {
+            response = "I need a real API key to chat with you. Please add your actual OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, GROQ_API_KEY, or LIQUIDMETAL_API_KEY to the .env file (replace the placeholder values).";
+          } else if (error.message.includes('401') || error.message.includes('403')) {
+            response = "Your API key seems invalid or expired. Please check your API keys in the .env file. Note: Your Gemini API key appears to be leaked/invalid - consider using Anthropic, Groq, or LiquidMetal instead.";
+          } else if (error.message.includes('429')) {
+            response = "I'm hitting rate limits. Please wait a moment and try again.";
+          } else {
+            response = `Sorry, I'm having trouble connecting: ${error.message}. Please check your API keys in the .env file.`;
+          }
         }
       }
       
