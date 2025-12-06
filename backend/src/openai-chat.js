@@ -1,10 +1,20 @@
 import fetch from 'node-fetch';
 
 export async function generateOpenAIResponse(userText, emotion) {
+  const emotionContext = {
+    stressed: 'The user is feeling stressed or overwhelmed. Be calm, empathetic, and offer practical, step-by-step help.',
+    happy: 'The user is in a positive mood. Match their energy and be encouraging.',
+    sad: 'The user is feeling down. Be gentle, supportive, and offer comfort.',
+    energetic: 'The user has high energy. Be enthusiastic and action-oriented.',
+    neutral: 'The user is in a balanced state. Be friendly and helpful.'
+  };
+
   const messages = [
     {
       role: 'system',
-      content: 'You are a helpful AI assistant focused on productivity and emotional support. Give brief, actionable responses.'
+      content: `You are EchoPersona, a friendly AI voice companion. You have natural, conversational conversations with people. ${emotionContext[emotion?.label || 'neutral']} 
+
+Keep responses to 1-2 sentences (under 40 words). Be natural, human-like, and conversational. Don't sound like a template or robot. Just have a normal, friendly conversation.`
     },
     {
       role: 'user', 
@@ -19,10 +29,10 @@ export async function generateOpenAIResponse(userText, emotion) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4o-mini',
       messages,
-      max_tokens: 150,
-      temperature: 0.7
+      max_tokens: 100,
+      temperature: 0.8
     })
   });
 
