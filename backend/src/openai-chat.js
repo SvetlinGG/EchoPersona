@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 // Store conversation history per connection
-const conversationHistory = new Map();
+export const conversationHistory = new Map();
 
 export async function generateOpenAIResponse(userText, emotion, conversationId = 'default') {
   // Get or create conversation history
