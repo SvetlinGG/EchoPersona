@@ -1,26 +1,39 @@
 import fetch from 'node-fetch';
 
-export async function generateOpenAIResponse(userText, emotion) {
-  const emotionContext = {
-    stressed: 'The user is feeling stressed or overwhelmed. Be calm, empathetic, and offer practical, step-by-step help.',
-    happy: 'The user is in a positive mood. Match their energy and be encouraging.',
-    sad: 'The user is feeling down. Be gentle, supportive, and offer comfort.',
-    energetic: 'The user has high energy. Be enthusiastic and action-oriented.',
-    neutral: 'The user is in a balanced state. Be friendly and helpful.'
-  };
+// Store conversation history per connection
+const conversationHistory = new Map();
 
+export async function generateOpenAIResponse(userText, emotion, conversationId = 'default') {
+  // Get or create conversation history
+  if (!conversationHistory.has(conversationId)) {
+    conversationHistory.set(conversationId, []);
+  }
+  const history = conversationHistory.get(conversationId);
+
+  // Build messages with context
   const messages = [
     {
       role: 'system',
-      content: `You are EchoPersona, a friendly AI voice companion. You have natural, conversational conversations with people. ${emotionContext[emotion?.label || 'neutral']} 
-
-Keep responses to 1-2 sentences (under 40 words). Be natural, human-like, and conversational. Don't sound like a template or robot. Just have a normal, friendly conversation.`
-    },
-    {
-      role: 'user', 
-      content: userText
+      content: `You're having a casual, friendly conversation with someone. Respond naturally like a real person would - use contractions, be conversational, and match their tone. Keep it to 1-2 short sentences. Don't be formal or robotic. Just talk naturally.`
     }
   ];
+
+  // Add conversation history (last 3 exchanges for context)
+  if (history.length > 0) {
+    messages.push(...history.slice(-6)); // Last 3 exchanges (6 messages)
+  }
+
+  // Add current message
+  messages.push({
+    role: 'user',
+    content: userText
+  });
+
+  // Update history
+  history.push(
+    { role: 'user', content: userText },
+    { role: 'assistant', content: '' } // Will be filled after response
+  );
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -31,8 +44,10 @@ Keep responses to 1-2 sentences (under 40 words). Be natural, human-like, and co
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       messages,
-      max_tokens: 100,
-      temperature: 0.8
+      max_tokens: 80,
+      temperature: 0.9, // Higher temperature for more natural variation
+      presence_penalty: 0.3, // Encourage new topics
+      frequency_penalty: 0.3 // Avoid repetition
     })
   });
 
@@ -41,5 +56,17 @@ Keep responses to 1-2 sentences (under 40 words). Be natural, human-like, and co
   }
 
   const data = await response.json();
-  return data.choices[0].message.content.trim();
+  const responseText = data.choices[0].message.content.trim();
+  
+  // Update history with the response
+  if (history.length > 0) {
+    history[history.length - 1].content = responseText;
+  }
+  
+  // Keep history manageable (max 10 exchanges = 20 messages)
+  if (history.length > 20) {
+    history.splice(0, history.length - 20);
+  }
+  
+  return responseText;
 }

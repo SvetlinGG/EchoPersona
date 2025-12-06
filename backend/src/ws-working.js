@@ -1,12 +1,17 @@
-import { generateLiquidMetalResponse } from './liquidmetal-ai.js';
 import { simpleTranscribe } from './stt-simple.js';
-import { generateRealAnswer } from './real-answers.js';
 import { generateOpenAIResponse } from './openai-chat.js';
 import { transcribeWebmOpusBufferToText } from './stt-deepgram.js';
 import { elevenLabsTtsStream } from './tts-eleven.js';
 
+// Store conversation IDs per WebSocket connection
+const wsConversationIds = new WeakMap();
+
 export function handleWsConnection(ws) {
   send(ws, { type: 'hello', payload: { server: 'EchoPersona WS' } });
+
+  // Generate unique conversation ID for this connection
+  const conversationId = `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  wsConversationIds.set(ws, conversationId);
 
   let collecting = false;
   let audioBuffers = [];
@@ -78,24 +83,26 @@ export function handleWsConnection(ws) {
       try {
         // Try OpenAI first for natural conversations
         if (process.env.OPENAI_API_KEY) {
-          response = await generateOpenAIResponse(transcript, emotion);
+          const conversationId = wsConversationIds.get(ws) || 'default';
+          response = await generateOpenAIResponse(transcript, emotion, conversationId);
           console.log('OpenAI response:', response);
         } 
         // Fallback to Gemini if OpenAI not available
         else if (process.env.GEMINI_API_KEY) {
-          const conversationPrompt = `You are having a natural, friendly conversation. The person just said: "${transcript}". 
+          // Much more natural, casual prompt
+          const conversationPrompt = `Someone just said to you: "${transcript}"
+
+Respond naturally like you're talking to a friend. Use casual language, contractions, and be conversational. Keep it to 1-2 short sentences. Don't be formal or sound like a robot. Just respond like a real person would.`;
           
-Respond naturally and conversationally in 1-2 sentences (under 40 words). Be empathetic, helpful, and human-like. Don't sound like a template or robot. Just have a normal conversation.`;
-          
-          const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+          const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{ parts: [{ text: conversationPrompt }] }],
               generationConfig: { 
-                temperature: 0.8, 
-                maxOutputTokens: 100,
-                topP: 0.9,
+                temperature: 0.9, // Higher for more natural variation
+                maxOutputTokens: 80,
+                topP: 0.95,
                 topK: 40
               }
             })
@@ -146,7 +153,19 @@ Respond naturally and conversationally in 1-2 sentences (under 40 words). Be emp
     }
   });
 
-  ws.on('close', () => {});
+  ws.on('close', () => {
+    // Clean up conversation history when connection closes
+    const conversationId = wsConversationIds.get(ws);
+    if (conversationId) {
+      // Optionally clear history after delay to allow reconnection
+      setTimeout(() => {
+        const { conversationHistory } = await import('./openai-chat.js');
+        if (conversationHistory && conversationHistory.has(conversationId)) {
+          conversationHistory.delete(conversationId);
+        }
+      }, 60000); // Clear after 1 minute
+    }
+  });
 }
 
 function send(ws, obj) {
