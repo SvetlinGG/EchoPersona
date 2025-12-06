@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 export class PersonaStylistAgent {
   constructor() {
     this.apiKey = process.env.GEMINI_API_KEY;
-    this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+    this.baseUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-exp:generateContent';
   }
 
   async styleResponse(rawResponse, emotion, persona = 'coach') {
