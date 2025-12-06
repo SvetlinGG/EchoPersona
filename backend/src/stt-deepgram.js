@@ -1,6 +1,13 @@
-import { createClient } from '@deepgram/sdk';
+// Lazy load Deepgram only when needed
+let deepgram = null;
 
-const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
+async function getDeepgramClient() {
+  if (!deepgram && process.env.DEEPGRAM_API_KEY) {
+    const { createClient } = await import('@deepgram/sdk');
+    deepgram = createClient(process.env.DEEPGRAM_API_KEY);
+  }
+  return deepgram;
+}
 
 export async function transcribeWebmOpusBufferToText(buf) {
     if (!process.env.DEEPGRAM_API_KEY) {
@@ -11,11 +18,16 @@ export async function transcribeWebmOpusBufferToText(buf) {
         throw new Error('Audio buffer too small or empty');
     }
     
+    const client = await getDeepgramClient();
+    if (!client) {
+        throw new Error('DEEPGRAM_API_KEY not configured');
+    }
+    
     try {
         console.log('Deepgram API Key present:', !!process.env.DEEPGRAM_API_KEY);
         console.log('Buffer size:', buf.length);
         
-        const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
+        const { result, error } = await client.listen.prerecorded.transcribeFile(
             buf,
             {
                 model: 'nova-2',
@@ -44,8 +56,13 @@ export async function transcribeWebmOpusBufferToText(buf) {
     }
 }
 
-export function createRealtimeTranscription(onTranscript, onError) {
-    const connection = deepgram.listen.live({
+export async function createRealtimeTranscription(onTranscript, onError) {
+    const client = await getDeepgramClient();
+    if (!client) {
+        throw new Error('DEEPGRAM_API_KEY not configured');
+    }
+    
+    const connection = client.listen.live({
         model: 'nova-2',
         language: 'en',
         smart_format: true,
